@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "160327446197",
+    "project_id": "connect-circle-23dca",
+    "storage_bucket": "connect-circle-23dca.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:160327446197:android:cf34e55236cd90afafd8fc",
+        "android_client_info": {
+          "package_name": "com.example.connectcircle"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDtUw-G5VTOT-3duoyC4xY7Q3suaXlGsTw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
