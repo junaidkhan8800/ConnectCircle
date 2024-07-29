@@ -102,7 +102,7 @@ fun BottomNavigationBar(navController : NavHostController) {
                label = {
                    Text(text = navItem.label)
                },
-               alwaysShowLabel = false
+               alwaysShowLabel = true
            )
 
        }

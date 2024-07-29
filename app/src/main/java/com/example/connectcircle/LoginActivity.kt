@@ -66,41 +66,16 @@ class LoginActivity : ComponentActivity() {
         // Update data and save to SharedPreferences
         val isProfileCompleted = preferencesManager.getProfileUpdated("profileCompleted", true)
 
-//        val isProfileCompleted = firestore.collection("users").document(mAuth.currentUser!!.uid).get().addOnSuccessListener { document ->
-//            document["isProfileCompleted"]
-////            Toast.makeText(this, document["isProfileCompleted"].toString(), Toast.LENGTH_SHORT).show()
-//            Log.e("TAG", document["isProfileCompleted"].toString() )
-//        }
-
 
         mAuth.currentUser?.uid?.let { PresenceManager.updatePresence(it, true) }
 
         if (mAuth.currentUser != null && isProfileCompleted){
 
-//            val isProfileCompleted = checkProfileCompletion(mAuth.currentUser!!.uid)
-//            handleProfileCompletion(isProfileCompleted)
-
             startActivity(Intent(this, HomeActivity::class.java))
+        }else if (mAuth.currentUser != null && !isProfileCompleted){
 
-//            if (isProfileCompleted.toString() == "true"){
-//
-//                startActivity(
-//                    Intent(
-//                        this,
-//                        HomeActivity::class.java
-//                    )
-//                )
-//
-//            }else{
-//
-//                startActivity(
-//                    Intent(
-//                        this,
-//                        RegistrationActivity::class.java
-//                    )
-//                )
-//
-//            }
+            startActivity(Intent(this, RegistrationActivity::class.java))
+
         }
 
         enableEdgeToEdge()
@@ -223,7 +198,7 @@ fun LoginActivityUI(context: Context) {
 
         }
 
-        Card(
+        Surface(
             modifier = Modifier
                 .fillMaxSize()
                 .weight(0.6f),
@@ -366,12 +341,26 @@ private fun signInWithPhoneAuthCredential(
 
                 Toast.makeText(context, "Verification Successful", Toast.LENGTH_LONG).show()
 
-                context.startActivity(
-                    Intent(
-                        context,
-                        RegistrationActivity::class.java
+                val isProfileCompleted = preferencesManager.getProfileUpdated("profileCompleted", true)
+
+                if (!isProfileCompleted){
+
+                    context.startActivity(
+                        Intent(
+                            context,
+                            RegistrationActivity::class.java
+                        )
                     )
-                )
+                }else{
+                    context.startActivity(
+                        Intent(
+                            context,
+                            HomeActivity::class.java
+                        )
+                    )
+                }
+
+
 
                 activity.finish()
 

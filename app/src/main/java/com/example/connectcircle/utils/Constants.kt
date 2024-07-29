@@ -1,6 +1,7 @@
 package com.example.connectcircle.utils
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import com.example.connectcircle.models.BottomNavItem
@@ -22,7 +23,7 @@ class Constants {
         val BottomNavItems = listOf(
 
             BottomNavItem(label = "Home", icon = Icons.Filled.Home, route = "home"),
-            BottomNavItem(label = "Online", icon = Icons.Filled.Person, route = "online"),
+            BottomNavItem(label = "Online Users", icon = Icons.Filled.Groups, route = "online"),
             BottomNavItem(label = "Profile", icon = Icons.Filled.Person, route = "profile")
 
         )

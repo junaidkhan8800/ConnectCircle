@@ -121,7 +121,7 @@ fun RegistrationUI() {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Personal Details") },
+                title = { Text(text = "Personal Details", color = Color.Black) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary
                 )
@@ -132,7 +132,7 @@ fun RegistrationUI() {
             .fillMaxSize()
 
     ) { it ->
-        Card(
+        Surface(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(it),
@@ -327,6 +327,7 @@ fun RegistrationUI() {
 
                                             // Update data and save to SharedPreferences
                                             preferencesManager.saveProfileUpdated("profileCompleted", true)
+                                            preferencesManager.saveAreaOfInterest("areaOfInterest", areaOfInterest.capitalizeWords().trim())
 
                                             context.startActivity(Intent(context, HomeActivity::class.java))
 

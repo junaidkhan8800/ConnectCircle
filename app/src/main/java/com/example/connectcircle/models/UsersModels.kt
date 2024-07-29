@@ -1,14 +1,18 @@
 package com.example.connectcircle.models
 
+import com.google.firebase.firestore.PropertyName
+
 data class UsersModels(
 
-    var id: String,
+    @get:PropertyName("id") var id: String,
+    @get:PropertyName("fullName") var fullName: String = "",
+    @get:PropertyName("mobileNumber") var mobileNumber: String = "",
+    @get:PropertyName("email") var email: String = "",
+    @get:PropertyName("areaOfInterest") var areaOfInterest: String = "",
+    @get:PropertyName("profilePicture") var profilePicture: String = "",
+    @get:PropertyName("isOnline") var isOnline: Any?
+){
 
-    var fullName: String = "",
-    var mobileNumber: String = "",
-    var email: String = "",
-    var areaOfInterest: String = "",
-    var profilePicture: String = "",
-
-    var isOnline: Any?
-)
+    // Empty constructor required for Firestore deserialization
+    constructor() : this("", "", "", "", "", "", true)
+}
