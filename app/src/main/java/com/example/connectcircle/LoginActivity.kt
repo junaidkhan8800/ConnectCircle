@@ -64,15 +64,15 @@ class LoginActivity : ComponentActivity() {
         val preferencesManager = PreferencesManager(this)
 
         // Update data and save to SharedPreferences
-        val isProfileCompleted = preferencesManager.getProfileUpdated("profileCompleted", true)
+        val isProfileCompleted = preferencesManager.getProfileUpdated("profileCompleted", false)
 
 
         mAuth.currentUser?.uid?.let { PresenceManager.updatePresence(it, true) }
 
-        if (mAuth.currentUser != null && isProfileCompleted){
+        if (mAuth.currentUser != null && isProfileCompleted) {
 
             startActivity(Intent(this, HomeActivity::class.java))
-        }else if (mAuth.currentUser != null && !isProfileCompleted){
+        } else if (mAuth.currentUser != null && !isProfileCompleted) {
 
             startActivity(Intent(this, RegistrationActivity::class.java))
 
@@ -96,15 +96,19 @@ class LoginActivity : ComponentActivity() {
     private fun checkProfileCompletion(uid: String): Boolean {
         var isProfileCompleted = false
         // Using withContext to switch to IO dispatcher for Firestore operation
-            firestore.collection("users").document(uid)
-                .get()
-                .addOnSuccessListener { document ->
-                    isProfileCompleted = document.getBoolean("isProfileCompleted") ?: false
-                }
-                .addOnFailureListener { e ->
-                    // Handle errors while fetching profile completion status
-                    Toast.makeText(this@LoginActivity, "Failed to fetch profile completion status: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
+        firestore.collection("users").document(uid)
+            .get()
+            .addOnSuccessListener { document ->
+                isProfileCompleted = document.getBoolean("isProfileCompleted") ?: false
+            }
+            .addOnFailureListener { e ->
+                // Handle errors while fetching profile completion status
+                Toast.makeText(
+                    this@LoginActivity,
+                    "Failed to fetch profile completion status: ${e.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
 
         return isProfileCompleted
     }
@@ -253,13 +257,20 @@ fun LoginActivityUI(context: Context) {
 
 
                             if (TextUtils.isEmpty(mobileNumber)) {
-                                Toast.makeText(context, "Please enter Mobile Number", Toast.LENGTH_LONG)
+                                Toast.makeText(
+                                    context,
+                                    "Please enter Mobile Number",
+                                    Toast.LENGTH_LONG
+                                )
                                     .show()
-                            } else if (mobileNumber.length < 10){
-                                Toast.makeText(context, "Please enter valid Mobile Number", Toast.LENGTH_LONG)
+                            } else if (mobileNumber.length < 10) {
+                                Toast.makeText(
+                                    context,
+                                    "Please enter valid Mobile Number",
+                                    Toast.LENGTH_LONG
+                                )
                                     .show()
-                            }
-                            else {
+                            } else {
 
                                 val number = "+91${mobileNumber}"
                                 // on below line calling method to generate verification code.
@@ -291,9 +302,10 @@ fun LoginActivityUI(context: Context) {
                                         .show()
                                 } else {
                                     // on below line generating phone credentials.
-                                    val credential: PhoneAuthCredential = PhoneAuthProvider.getCredential(
-                                        verificationID, otp
-                                    )
+                                    val credential: PhoneAuthCredential =
+                                        PhoneAuthProvider.getCredential(
+                                            verificationID, otp
+                                        )
                                     // on below line signing within credentials.
                                     signInWithPhoneAuthCredential(
                                         mobileNumber,
@@ -341,26 +353,12 @@ private fun signInWithPhoneAuthCredential(
 
                 Toast.makeText(context, "Verification Successful", Toast.LENGTH_LONG).show()
 
-                val isProfileCompleted = preferencesManager.getProfileUpdated("profileCompleted", true)
-
-                if (!isProfileCompleted){
-
-                    context.startActivity(
-                        Intent(
-                            context,
-                            RegistrationActivity::class.java
-                        )
+                  context.startActivity(
+                    Intent(
+                        context,
+                        RegistrationActivity::class.java
                     )
-                }else{
-                    context.startActivity(
-                        Intent(
-                            context,
-                            HomeActivity::class.java
-                        )
-                    )
-                }
-
-
+                )
 
                 activity.finish()
 

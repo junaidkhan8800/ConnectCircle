@@ -39,6 +39,10 @@
             android:exported="true"
             android:theme="@style/Theme.ConnectCircle" />
 
+        <activity android:name="com.example.connectcircle.UpdateProfileActivity"
+            android:exported="true"
+            android:theme="@style/Theme.ConnectCircle"/>
+
 
     </application>
 

@@ -1,7 +1,9 @@
 package com.example.connectcircle.navigation
 
+import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -31,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -38,6 +41,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.connectcircle.R
+import com.example.connectcircle.RegistrationActivity
+import com.example.connectcircle.UpdateProfileActivity
 import com.example.connectcircle.models.UsersModels
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -48,6 +53,8 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings
 fun ProfileScreen() {
 
     var userData by remember { mutableStateOf<UsersModels?>(null) }
+
+    val context = LocalContext.current
 
     LaunchedEffect(key1 = true) {
 
@@ -127,7 +134,9 @@ fun ProfileScreen() {
                 Spacer(modifier = Modifier.height(32.dp))
                 Text(
                     text = "Edit Profile", color = Color.Green, textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        context.startActivity(Intent(context, UpdateProfileActivity::class.java))
+                    }
                 )
                 Spacer(modifier = Modifier.height(32.dp))
                 Text(
