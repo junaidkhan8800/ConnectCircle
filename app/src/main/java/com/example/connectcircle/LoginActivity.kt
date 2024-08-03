@@ -12,6 +12,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,8 +21,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -36,6 +46,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -131,55 +143,9 @@ class LoginActivity : ComponentActivity() {
 @Composable
 fun LoginActivityUI(context: Context) {
 
-    var mobileNumber by remember { mutableStateOf("") }
-
-    var otp by remember { mutableStateOf("") }
-
-    var otpVisibility by remember { mutableStateOf(false) }
-
-    var sendOtpVisibility by remember { mutableStateOf(true) }
-
-    val maxNumberCount = 10
-
-    var verificationID by remember {
-        mutableStateOf("")
-    }
-
-    var message by remember {
-        mutableStateOf("")
-    }
-
-    // on below line creating variable
-    // for firebase auth and callback
-    val mAuth: FirebaseAuth = FirebaseAuth.getInstance()
-//    mAuth.firebaseAuthSettings.setAppVerificationDisabledForTesting(true)
-    lateinit var callbacks: PhoneAuthProvider.OnVerificationStateChangedCallbacks
-
-
-    // on below line creating callback
-    callbacks = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-        override fun onVerificationCompleted(p0: PhoneAuthCredential) {
-            // on below line updating message
-            // and displaying toast message
-            message = "Verification successful"
-            Toast.makeText(context, "Verification Successful", Toast.LENGTH_LONG).show()
-        }
-
-        override fun onVerificationFailed(p0: FirebaseException) {
-            // on below line displaying error as toast message.
-            message = "Fail to verify user : \n" + p0.message
-            Toast.makeText(context, "Verification Failed", Toast.LENGTH_SHORT).show()
-        }
-
-        override fun onCodeSent(verificationId: String, p1: PhoneAuthProvider.ForceResendingToken) {
-            // this method is called when code is send
-            super.onCodeSent(verificationId, p1)
-            verificationID = verificationId
-
-            otpVisibility = true
-            sendOtpVisibility = false
-        }
-    }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -216,183 +182,79 @@ fun LoginActivityUI(context: Context) {
                 )
 
                 Text(
-                    text = "Enter your Mobile Number. We will send you a One Time Password (OTP) on your provided mobile number.",
+                    text = "Enter your Email and Password to proceed with login.",
                     modifier = Modifier.padding(16.dp), fontSize = 16.sp,
                 )
 
-                OutlinedTextField(value = mobileNumber,
-                    onValueChange = {
-                        if (it.length <= maxNumberCount) {
-                            mobileNumber = it
-                        }
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                OutlinedTextField(value = email,
+                    onValueChange = { email = it },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
-                    maxLines = 1,
-                    label = { Text(text = "Enter Mobile Number") })
-
-                AnimatedVisibility(visible = otpVisibility) {
-
-                    OutlinedTextField(value = otp, onValueChange = { otp = it },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        maxLines = 1,
-                        label = { Text(text = "Enter OTP") })
-
-                }
-
-                Row(modifier = Modifier.fillMaxWidth()) {
-
-                    AnimatedVisibility(
-                        visible = sendOtpVisibility, modifier = Modifier
-                            .weight(0.5F)
-                            .padding(16.dp)
-                    ) {
-
-                        Button(onClick = {
+                    singleLine = true,
+                    label = { Text(text = "Email") })
 
 
-                            if (TextUtils.isEmpty(mobileNumber)) {
-                                Toast.makeText(
-                                    context,
-                                    "Please enter Mobile Number",
-                                    Toast.LENGTH_LONG
-                                )
-                                    .show()
-                            } else if (mobileNumber.length < 10) {
-                                Toast.makeText(
-                                    context,
-                                    "Please enter valid Mobile Number",
-                                    Toast.LENGTH_LONG
-                                )
-                                    .show()
-                            } else {
 
-                                val number = "+91${mobileNumber}"
-                                // on below line calling method to generate verification code.
-                                sendVerificationCode(number, mAuth, context as Activity, callbacks)
-                            }
+                OutlinedTextField(value = password, onValueChange = { password = it },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    singleLine = true,
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    label = { Text(text = "Password") },
+                    trailingIcon = {
+                        val image = if (passwordVisible)
+                            Icons.Filled.Visibility
+                        else Icons.Filled.VisibilityOff
 
-                        }) {
+                        val description = if (passwordVisible) "Hide Password" else "Show Password"
 
-                            Text(text = "Send OTP", fontSize = 16.sp)
-
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(imageVector = image, description)
                         }
+                    })
+
+
+                Button(modifier = Modifier.fillMaxWidth().padding(16.dp),onClick = {
+
+                    if (TextUtils.isEmpty(email)) {
+                        Toast.makeText(context, "Please enter Email", Toast.LENGTH_LONG).show()
+                    } else if (TextUtils.isEmpty(password)) {
+                        Toast.makeText(context, "Please enter Password", Toast.LENGTH_LONG).show()
+                    } else {
 
                     }
 
-                    AnimatedVisibility(
-                        visible = otpVisibility, modifier = Modifier
-                            .weight(0.5F)
-                            .padding(16.dp)
-                    ) {
-
-                        Button(
-                            onClick = {
-
-                                // on below line we are validating
-                                // user input parameters.
-                                if (TextUtils.isEmpty(otp)) {
-                                    // displaying toast message on below line.
-                                    Toast.makeText(context, "Please enter OTP", Toast.LENGTH_LONG)
-                                        .show()
-                                } else {
-                                    // on below line generating phone credentials.
-                                    val credential: PhoneAuthCredential =
-                                        PhoneAuthProvider.getCredential(
-                                            verificationID, otp
-                                        )
-                                    // on below line signing within credentials.
-                                    signInWithPhoneAuthCredential(
-                                        mobileNumber,
-                                        credential,
-                                        mAuth,
-                                        context as Activity,
-                                        context,
-                                        message
-                                    )
-                                }
-
-                            },
-                        ) {
-
-                            Text(text = "Verify OTP", fontSize = 16.sp)
-
-                        }
-                    }
+                }) {
+                    Text(text = "Login", fontSize = 16.sp)
                 }
+
+                Row(modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center) {
+
+                    Text(
+                        text = "Don't have an account?",
+                        fontSize = 16.sp
+                    )
+
+                    Text(
+                        text = "Register",
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(start = 8.dp).clickable {
+                            context.startActivity(Intent(context,RegistrationActivity::class.java))
+                        }, fontSize = 16.sp,
+                    )
+
+                }
+
             }
         }
     }
-}
-
-// on below line creating method to
-// sign in with phone credentials.
-private fun signInWithPhoneAuthCredential(
-    mobileNumber: String,
-    credential: PhoneAuthCredential,
-    auth: FirebaseAuth,
-    activity: Activity,
-    context: Context,
-    message: String
-) {
-    // on below line signing with credentials.
-    auth.signInWithCredential(credential)
-        .addOnCompleteListener(activity) { task ->
-            // displaying toast message when
-            // verification is successful
-            if (task.isSuccessful) {
-//                message = "Verification successful"
-
-                val preferencesManager = PreferencesManager(context)
-                preferencesManager.saveMobileNumber("mobileNumber", mobileNumber)
-
-                Toast.makeText(context, "Verification Successful", Toast.LENGTH_LONG).show()
-
-                  context.startActivity(
-                    Intent(
-                        context,
-                        RegistrationActivity::class.java
-                    )
-                )
-
-                activity.finish()
-
-            } else {
-                // Sign in failed, display a message
-                if (task.exception is FirebaseAuthInvalidCredentialsException) {
-                    // The verification code
-                    // entered was invalid
-                    Toast.makeText(
-                        context,
-                        "Verification failed" + (task.exception as FirebaseAuthInvalidCredentialsException).message,
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            }
-        }
-}
-
-// below method is use to send
-// verification code to user phone number.
-private fun sendVerificationCode(
-    number: String,
-    auth: FirebaseAuth,
-    activity: Activity,
-    callbacks: PhoneAuthProvider.OnVerificationStateChangedCallbacks
-) {
-    // on below line generating options for verification code
-    val options = PhoneAuthOptions.newBuilder(auth)
-        .setPhoneNumber(number) // Phone number to verify
-        .setTimeout(60L, TimeUnit.SECONDS) // Timeout and unit
-        .setActivity(activity) // Activity (for callback binding)
-        .setCallbacks(callbacks) // OnVerificationStateChangedCallbacks
-        .build()
-    PhoneAuthProvider.verifyPhoneNumber(options)
 }
 
 @Preview(showBackground = true, showSystemUi = true)
