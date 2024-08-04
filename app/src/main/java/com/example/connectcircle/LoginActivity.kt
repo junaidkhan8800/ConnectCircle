@@ -14,6 +14,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -73,21 +74,12 @@ class LoginActivity : ComponentActivity() {
 
         installSplashScreen()
 
-        val preferencesManager = PreferencesManager(this)
-
-        // Update data and save to SharedPreferences
-        val isProfileCompleted = preferencesManager.getProfileUpdated("profileCompleted", false)
-
 
         mAuth.currentUser?.uid?.let { PresenceManager.updatePresence(it, true) }
 
-        if (mAuth.currentUser != null && isProfileCompleted) {
+        if (mAuth.currentUser != null) {
 
             startActivity(Intent(this, HomeActivity::class.java))
-        } else if (mAuth.currentUser != null && !isProfileCompleted) {
-
-            startActivity(Intent(this, RegistrationActivity::class.java))
-
         }
 
         enableEdgeToEdge()
@@ -147,128 +139,164 @@ fun LoginActivityUI(context: Context) {
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.primary),
-    ) {
+    var showDialog by remember { mutableStateOf(false) }
 
-        Surface(
+    val mAuth: FirebaseAuth = FirebaseAuth.getInstance()
+
+    Box(contentAlignment= Alignment.Center){
+
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .weight(0.4f),
-            color = MaterialTheme.colorScheme.primary
+                .background(color = MaterialTheme.colorScheme.primary),
         ) {
 
-            Image(
-                painter = painterResource(R.drawable.ic_launcher_foreground),
-                contentDescription = "null",
-                modifier = Modifier.align(Alignment.CenterHorizontally)
-            )
+            Surface(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(0.4f),
+                color = MaterialTheme.colorScheme.primary
+            ) {
 
-        }
-
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .weight(0.6f),
-            shape = RoundedCornerShape(topStart = 50.dp)
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-
-                Text(
-                    text = "Login", fontSize = 32.sp, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 24.dp, start = 16.dp)
+                Image(
+                    painter = painterResource(R.drawable.ic_launcher_foreground),
+                    contentDescription = "null",
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
 
-                Text(
-                    text = "Enter your Email and Password to proceed with login.",
-                    modifier = Modifier.padding(16.dp), fontSize = 16.sp,
-                )
+            }
 
-                OutlinedTextField(value = email,
-                    onValueChange = { email = it },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                    modifier = Modifier
+            Surface(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .weight(0.6f),
+                shape = RoundedCornerShape(topStart = 50.dp)
+            ) {
+                Column(modifier = Modifier.fillMaxSize()) {
+
+                    Text(
+                        text = "Login", fontSize = 32.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 24.dp, start = 16.dp)
+                    )
+
+                    Text(
+                        text = "Enter your Email and Password to proceed with login.",
+                        modifier = Modifier.padding(16.dp), fontSize = 16.sp,
+                    )
+
+                    OutlinedTextField(value = email,
+                        onValueChange = { email = it },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        singleLine = true,
+                        label = { Text(text = "Email") })
+
+
+
+                    OutlinedTextField(value = password, onValueChange = { password = it },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                        singleLine = true,
+                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        label = { Text(text = "Password") },
+                        trailingIcon = {
+                            val image = if (passwordVisible)
+                                Icons.Filled.Visibility
+                            else Icons.Filled.VisibilityOff
+
+                            val description =
+                                if (passwordVisible) "Hide Password" else "Show Password"
+
+                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                Icon(imageVector = image, description)
+                            }
+                        })
+
+                    Text(
+                        text = "Forgot Password?",
+                        modifier = Modifier.padding(16.dp),
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    Button(modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    singleLine = true,
-                    label = { Text(text = "Email") })
+                        .padding(16.dp), onClick = {
 
+                        if (TextUtils.isEmpty(email)) {
+                            Toast.makeText(context, "Please enter Email", Toast.LENGTH_LONG).show()
+                        } else if (TextUtils.isEmpty(password)) {
+                            Toast.makeText(context, "Please enter Password", Toast.LENGTH_LONG)
+                                .show()
+                        } else {
 
+                            mAuth.signInWithEmailAndPassword(email, password)
+                                .addOnCompleteListener {
 
-                OutlinedTextField(value = password, onValueChange = { password = it },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    singleLine = true,
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                    label = { Text(text = "Password") },
-                    trailingIcon = {
-                        val image = if (passwordVisible)
-                            Icons.Filled.Visibility
-                        else Icons.Filled.VisibilityOff
+                                    if (it.isSuccessful) {
+                                        Toast.makeText(
+                                            context,
+                                            "Login successful",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                        context.startActivity(
+                                            Intent(
+                                                context,
+                                                HomeActivity::class.java
+                                            )
+                                        )
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "Login failed. Incorrect email or password",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                }
 
-                        val description = if (passwordVisible) "Hide Password" else "Show Password"
-
-                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(imageVector = image, description)
                         }
-                    })
 
-                Text(
-                    text = "Forgot Password?",
-                    modifier = Modifier.padding(16.dp),
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                    }) {
+                        Text(text = "Login", fontSize = 16.sp)
+                    }
 
-                Button(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),onClick = {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
 
-                    if (TextUtils.isEmpty(email)) {
-                        Toast.makeText(context, "Please enter Email", Toast.LENGTH_LONG).show()
-                    } else if (TextUtils.isEmpty(password)) {
-                        Toast.makeText(context, "Please enter Password", Toast.LENGTH_LONG).show()
-                    } else {
+                        Text(
+                            text = "Don't have an account?",
+                            fontSize = 16.sp
+                        )
+
+                        Text(
+                            text = "Register",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .clickable {
+                                    context.startActivity(
+                                        Intent(
+                                            context,
+                                            RegistrationActivity::class.java
+                                        )
+                                    )
+                                },
+                            fontSize = 16.sp,
+                        )
 
                     }
 
-                }) {
-                    Text(text = "Login", fontSize = 16.sp)
                 }
-
-                Row(modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center) {
-
-                    Text(
-                        text = "Don't have an account?",
-                        fontSize = 16.sp
-                    )
-
-                    Text(
-                        text = "Register",
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .padding(start = 8.dp)
-                            .clickable {
-                                context.startActivity(
-                                    Intent(
-                                        context,
-                                        RegistrationActivity::class.java
-                                    )
-                                )
-                            }, fontSize = 16.sp,
-                    )
-
-                }
-
             }
         }
     }
