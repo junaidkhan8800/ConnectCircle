@@ -217,8 +217,16 @@ fun LoginActivityUI(context: Context) {
                         }
                     })
 
+                Text(
+                    text = "Forgot Password?",
+                    modifier = Modifier.padding(16.dp),
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.primary
+                )
 
-                Button(modifier = Modifier.fillMaxWidth().padding(16.dp),onClick = {
+                Button(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),onClick = {
 
                     if (TextUtils.isEmpty(email)) {
                         Toast.makeText(context, "Please enter Email", Toast.LENGTH_LONG).show()
@@ -232,7 +240,9 @@ fun LoginActivityUI(context: Context) {
                     Text(text = "Login", fontSize = 16.sp)
                 }
 
-                Row(modifier = Modifier.fillMaxWidth().padding(16.dp),
+                Row(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center) {
 
@@ -245,9 +255,16 @@ fun LoginActivityUI(context: Context) {
                         text = "Register",
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(start = 8.dp).clickable {
-                            context.startActivity(Intent(context,RegistrationActivity::class.java))
-                        }, fontSize = 16.sp,
+                        modifier = Modifier
+                            .padding(start = 8.dp)
+                            .clickable {
+                                context.startActivity(
+                                    Intent(
+                                        context,
+                                        RegistrationActivity::class.java
+                                    )
+                                )
+                            }, fontSize = 16.sp,
                     )
 
                 }
