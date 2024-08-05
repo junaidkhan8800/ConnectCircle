@@ -1,7 +1,9 @@
 package com.example.connectcircle.navigation
 
+import android.app.Activity
 import android.content.Intent
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -13,6 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
@@ -21,10 +25,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,63 +43,21 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
+import com.example.connectcircle.LoginActivity
 import com.example.connectcircle.R
-import com.example.connectcircle.RegistrationActivity
 import com.example.connectcircle.UpdateProfileActivity
 import com.example.connectcircle.models.UsersModels
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.FirebaseFirestoreSettings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen() {
-
-    var userData by remember { mutableStateOf<UsersModels?>(null) }
+fun ProfileScreen(userData: UsersModels) {
 
     val context = LocalContext.current
-
-    LaunchedEffect(key1 = true) {
-
-        val mFirestore = FirebaseFirestore.getInstance()
-        mFirestore.firestoreSettings = FirebaseFirestoreSettings.Builder().build()
-        val mAuth: FirebaseAuth = FirebaseAuth.getInstance()
-
-
-        mFirestore
-            .collection("users")
-            .document(mAuth.currentUser?.uid!!)
-            .get()
-            .addOnSuccessListener { document ->
-
-                if (document != null && document.exists()) {
-                    val user = document.toObject(UsersModels::class.java)
-                    if (user != null) {
-
-                        userData = UsersModels(
-                            "",
-                            user.fullName,
-                            user.mobileNumber,
-                            user.email,
-                            user.areaOfInterest,
-                            user.profilePicture,
-                            true
-                        )
-
-                    } else {
-                        Log.e("TAG", "ProfileScreen: User Not Found")
-                    }
-                } else {
-                    Log.e("TAG", "ProfileScreen: User Not Found")
-                }
-
-            }.addOnFailureListener { e ->
-                Log.e("TAG", "Error writing document", e)
-            }
-    }
-
-
+    val mAuth: FirebaseAuth = FirebaseAuth.getInstance()
+    var openDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -116,33 +78,80 @@ fun ProfileScreen() {
             )
         },
         containerColor = MaterialTheme.colorScheme.primary,
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     ) {
-        Surface(modifier = Modifier
-            .fillMaxSize()
-            .padding(it),
-            shape = RoundedCornerShape(topStart = 50.dp)) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(it),
+            shape = RoundedCornerShape(topStart = 50.dp)
+        ) {
             Column(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(modifier = Modifier.height(16.dp))
-                userData?.let { it1 -> ProfileHeader(user = it1) }
+                ProfileHeader(user = userData)
                 Spacer(modifier = Modifier.height(16.dp))
-                userData?.let { it1 -> ProfileDetails(user = it1) }
+                ProfileDetails(user = userData)
                 Spacer(modifier = Modifier.height(32.dp))
-                Text(
-                    text = "Edit Profile", color = Color.Green, textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth().clickable {
-                        context.startActivity(Intent(context, UpdateProfileActivity::class.java))
-                    }
-                )
-                Spacer(modifier = Modifier.height(32.dp))
-                Text(
-                    text = "Log Out", color = Color.Red, textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
+
+                TextButton(onClick = {
+                    context.startActivity(
+                        Intent(
+                            context,
+                            UpdateProfileActivity::class.java
+                        )
+                    )
+                }) {
+                    Text(
+                        text = "Edit Profile",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 16.sp
+                    )
+                }
+
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                TextButton(onClick = { openDialog = true }) {
+                    Text(text = "Log Out",
+                        color = Color.Red,
+                        fontSize = 16.sp)
+                }
+
+
+                if (openDialog) {
+
+                    AlertDialog(
+                        modifier = Modifier.fillMaxWidth(),
+                        title = { Text(text = "Logout") },
+                        text = { Text(text = "Are you sure you want to logout?") },
+                        onDismissRequest = {
+                            openDialog = false
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { openDialog = false }) {
+                                Text(text = "Cancel")
+                            }
+                        },
+                        confirmButton = {
+                            TextButton(onClick = {
+
+                                mAuth.signOut()
+                                context.startActivity(Intent(context, LoginActivity::class.java))
+                                (context as Activity).finishAffinity()
+                                Toast.makeText(context, "Logged Out", Toast.LENGTH_SHORT).show()
+
+                            }) {
+                                Text(text = "OK")
+                            }
+                        }
+                    )
+
+                }
+
             }
         }
     }
@@ -169,6 +178,7 @@ fun ProfileHeader(user: UsersModels) {
         Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = user.fullName,
+            fontSize = 16.sp
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
@@ -215,6 +225,6 @@ fun ProfileDetailItem(label: String, value: String) {
 @Preview
 @Composable
 fun ProfilePreview() {
-    ProfileScreen()
+//    ProfileScreen(userData)
 }
 

@@ -5,11 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.text.TextUtils
+import android.util.Patterns
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,17 +23,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -54,15 +53,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.connectcircle.ui.theme.ConnectCircleTheme
-import com.example.connectcircle.utils.PreferencesManager
-import com.google.firebase.FirebaseException
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
-import com.google.firebase.auth.PhoneAuthCredential
-import com.google.firebase.auth.PhoneAuthOptions
-import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.firestore.FirebaseFirestore
-import java.util.concurrent.TimeUnit
 
 class LoginActivity : ComponentActivity() {
 
@@ -96,40 +88,6 @@ class LoginActivity : ComponentActivity() {
         }
     }
 
-
-    private fun checkProfileCompletion(uid: String): Boolean {
-        var isProfileCompleted = false
-        // Using withContext to switch to IO dispatcher for Firestore operation
-        firestore.collection("users").document(uid)
-            .get()
-            .addOnSuccessListener { document ->
-                isProfileCompleted = document.getBoolean("isProfileCompleted") ?: false
-            }
-            .addOnFailureListener { e ->
-                // Handle errors while fetching profile completion status
-                Toast.makeText(
-                    this@LoginActivity,
-                    "Failed to fetch profile completion status: ${e.message}",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-
-        return isProfileCompleted
-    }
-
-    // Function to handle profile completion status
-    private fun handleProfileCompletion(isProfileCompleted: Boolean) {
-        if (isProfileCompleted) {
-            // Profile is completed, navigate to HomeActivity
-            startActivity(Intent(this, HomeActivity::class.java))
-            finish()
-        } else {
-            // Profile is not completed, navigate to RegistrationActivity
-            startActivity(Intent(this, RegistrationActivity::class.java))
-            finish()
-        }
-    }
-
 }
 
 @Composable
@@ -139,15 +97,15 @@ fun LoginActivityUI(context: Context) {
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    var showDialog by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
 
     val mAuth: FirebaseAuth = FirebaseAuth.getInstance()
 
-    Box(contentAlignment= Alignment.Center){
+    Scaffold(Modifier.fillMaxSize()) {
 
         Column(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxSize().padding(it)
                 .background(color = MaterialTheme.colorScheme.primary),
         ) {
 
@@ -229,10 +187,15 @@ fun LoginActivityUI(context: Context) {
 
                         if (TextUtils.isEmpty(email)) {
                             Toast.makeText(context, "Please enter Email", Toast.LENGTH_LONG).show()
-                        } else if (TextUtils.isEmpty(password)) {
+                        } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()){
+                            Toast.makeText(context, "Please enter Email in correct format", Toast.LENGTH_LONG).show()
+                        }
+                        else if (TextUtils.isEmpty(password)) {
                             Toast.makeText(context, "Please enter Password", Toast.LENGTH_LONG)
                                 .show()
                         } else {
+
+                            isLoading = true
 
                             mAuth.signInWithEmailAndPassword(email, password)
                                 .addOnCompleteListener {
@@ -243,16 +206,23 @@ fun LoginActivityUI(context: Context) {
                                             "Login successful",
                                             Toast.LENGTH_LONG
                                         ).show()
+
+                                        isLoading = false
+
                                         context.startActivity(
                                             Intent(
                                                 context,
                                                 HomeActivity::class.java
                                             )
                                         )
+                                        (context as Activity).finish()
                                     } else {
+
+                                        isLoading = false
+
                                         Toast.makeText(
                                             context,
-                                            "Login failed. Incorrect email or password",
+                                            "Login failed. ${it.exception?.message}",
                                             Toast.LENGTH_LONG
                                         ).show()
                                     }
@@ -298,6 +268,21 @@ fun LoginActivityUI(context: Context) {
 
                 }
             }
+
+
+//            if (isLoading) {
+//
+//                Box(
+//                    modifier = Modifier.fillMaxSize()
+//                        .background(Color.Black.copy(alpha = 0.5F)),
+//                    contentAlignment = Alignment.Center
+//                ) {
+//                    CircularProgressIndicator()
+//                }
+//
+//            }
+
+
         }
     }
 }

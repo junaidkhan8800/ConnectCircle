@@ -12,6 +12,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,8 +28,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.twotone.Person
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
@@ -170,12 +173,25 @@ fun RegistrationUI() {
                         ) {
                             Surface(shape = RoundedCornerShape(100.dp)) {
 
-                                AsyncImage(
-                                    modifier = Modifier.size(150.dp),
-                                    model = selectedImageUri,
-                                    contentDescription = "Profile Image",
-                                    contentScale = ContentScale.Crop
-                                )
+                                if (selectedImageUri != null){
+
+                                    AsyncImage(
+                                        modifier = Modifier.size(150.dp),
+                                        model = selectedImageUri,
+                                        contentDescription = "Profile Image",
+                                        contentScale = ContentScale.Crop
+                                    )
+
+                                }else{
+
+                                    Icon(
+                                        imageVector = Icons.Default.Person,
+                                        modifier = Modifier.size(150.dp),
+                                        contentDescription = "Profile Image",
+                                    )
+
+                                }
+
                             }
                             Box(
                                 Modifier
@@ -369,7 +385,7 @@ fun RegistrationUI() {
 
                                     Toast.makeText(
                                         context,
-                                        "Please enter Password",
+                                        "Please enter 6 characters Password",
                                         Toast.LENGTH_LONG
                                     ).show()
 
