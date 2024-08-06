@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.text.TextUtils
+import android.util.Log
 import android.util.Patterns
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -101,11 +102,12 @@ fun LoginActivityUI(context: Context) {
 
     val mAuth: FirebaseAuth = FirebaseAuth.getInstance()
 
-    Scaffold(Modifier.fillMaxSize()) {
+    Scaffold(Modifier.fillMaxSize()) { it ->
 
         Column(
             modifier = Modifier
-                .fillMaxSize().padding(it)
+                .fillMaxSize()
+                .padding(it)
                 .background(color = MaterialTheme.colorScheme.primary),
         ) {
 

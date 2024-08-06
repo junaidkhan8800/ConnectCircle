@@ -1,5 +1,6 @@
 package com.example.connectcircle
 
+import android.app.Application
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -33,6 +34,8 @@ import com.example.connectcircle.utils.Constants
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.zegocloud.uikit.prebuilt.call.ZegoUIKitPrebuiltCallService
+import com.zegocloud.uikit.prebuilt.call.invite.ZegoUIKitPrebuiltCallInvitationConfig
 
 class HomeActivity : ComponentActivity() {
 
@@ -41,6 +44,7 @@ class HomeActivity : ComponentActivity() {
 
     private var userData = UsersModels()
     private val usersList = mutableStateListOf<UsersModels>()
+    var userDocumentId = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +56,7 @@ class HomeActivity : ComponentActivity() {
                 val navController = rememberNavController()
 
                 LaunchedEffect(key1 = true) {
+
                     mFirestore.firestoreSettings = FirebaseFirestoreSettings.Builder().build()
 
                     getUserData()
@@ -72,13 +77,19 @@ class HomeActivity : ComponentActivity() {
                             NavHostContainer(navController = navController,
                                 padding = padding,
                                 userData,
-                                usersList)
+                                usersList,
+                                userDocumentId)
                         }
                     )
 
                 }
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        ZegoUIKitPrebuiltCallService.unInit()
     }
 
     private fun getUserData() {
@@ -99,6 +110,16 @@ class HomeActivity : ComponentActivity() {
                         userData.mobileNumber = user.mobileNumber
                         userData.email = user.email
                         userData.areaOfInterest = user.areaOfInterest
+
+                        userDocumentId = document.id
+
+                        val application : Application = application
+                        val appId : Long = 150939430
+                        val appSign = "7baacd535f0cb1ff1e014916eda9107a2e0ae056507243a685081a6cf12c4c45"
+                        val userName : String = user.fullName
+                        val userId : String = document.id
+                        val callInvitationConfig = ZegoUIKitPrebuiltCallInvitationConfig()
+                        ZegoUIKitPrebuiltCallService.init(application,appId,appSign,userId,userName,callInvitationConfig)
 
                         getOnlineUsers(user.areaOfInterest)
 
@@ -169,7 +190,8 @@ fun NavHostContainer(
     navController: NavHostController,
     padding: PaddingValues,
     userData: UsersModels,
-    userList: SnapshotStateList<UsersModels>
+    userList: SnapshotStateList<UsersModels>,
+    userDocumentId: String
 ) {
 
     NavHost(
@@ -179,10 +201,10 @@ fun NavHostContainer(
         builder = {
 
             composable("home") {
-                HomeScreen()
+                HomeScreen(userDocumentId)
             }
             composable("online") {
-                OnlineUsers(userList)
+                OnlineUsers(userList,userDocumentId)
             }
             composable("profile") {
                 ProfileScreen(userData)

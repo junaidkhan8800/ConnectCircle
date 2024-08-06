@@ -33,7 +33,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,7 +56,7 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen() {
+fun HomeScreen(userDocumentId: String) {
 
     var search by remember { mutableStateOf("") }
     var listVisible by remember { mutableStateOf(false) }
@@ -258,5 +257,5 @@ fun ListUI(profilePicture: String, fullName: String, areaOfInterest: String, onl
 @Preview
 @Composable
 fun HomePrev() {
-    HomeScreen()
+    HomeScreen("userDocumentId")
 }

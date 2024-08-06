@@ -89,4 +89,6 @@ dependencies {
     //Material Icons
     implementation("androidx.compose.material:material-icons-extended:1.6.8")
 
+    //Zegocloud
+    implementation("com.github.ZEGOCLOUD:zego_uikit_prebuilt_call_android:+")
 }
