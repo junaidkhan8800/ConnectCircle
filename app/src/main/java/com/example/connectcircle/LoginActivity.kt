@@ -21,8 +21,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -114,7 +116,7 @@ fun LoginActivityUI(context: Context) {
             Surface(
                 modifier = Modifier
                     .fillMaxSize()
-                    .weight(0.4f),
+                    .weight(0.3f),
                 color = MaterialTheme.colorScheme.primary
             ) {
 
@@ -129,10 +131,10 @@ fun LoginActivityUI(context: Context) {
             Surface(
                 modifier = Modifier
                     .fillMaxSize()
-                    .weight(0.6f),
+                    .weight(0.7f),
                 shape = RoundedCornerShape(topStart = 50.dp)
             ) {
-                Column(modifier = Modifier.fillMaxSize()) {
+                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
 
                     Text(
                         text = "Login", fontSize = 32.sp, fontWeight = FontWeight.Bold,

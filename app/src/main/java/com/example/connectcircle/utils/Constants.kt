@@ -10,6 +10,9 @@ class Constants {
 
     companion object {
 
+        const val appId : Long = 150939430
+        const val appSign = "7baacd535f0cb1ff1e014916eda9107a2e0ae056507243a685081a6cf12c4c45"
+
         //Extension Function
         fun String.capitalizeWords(delimiter: String = " ") =
             split(delimiter).joinToString(delimiter) { word ->

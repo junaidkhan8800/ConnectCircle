@@ -126,12 +126,9 @@ fun RegistrationUI() {
     var checked by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
 
-
     val maxNumberCount = 10
 
     val context = LocalContext.current
-
-    val preferencesManager = remember { PreferencesManager(context) }
 
     Scaffold(
         topBar = {
@@ -312,14 +309,13 @@ fun RegistrationUI() {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp),
+                                .padding(start = 8.dp, end = 16.dp,top = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Start
                         ) {
                             Checkbox(checked = checked, onCheckedChange = { checked = it })
                             Text(
                                 text = "Agree Terms and Conditions",
-                                modifier = Modifier.padding(start = 4.dp),
                                 fontSize = 16.sp,
                                 color = MaterialTheme.colorScheme.primary
                             )
@@ -432,7 +428,7 @@ fun RegistrationUI() {
                                             userHashMap["email"] = email.trim()
                                             userHashMap["areaOfInterest"] =
                                                 areaOfInterest.capitalizeWords().trim()
-                                            userHashMap["password"] = password.trim()
+//                                            userHashMap["password"] = password.trim()
                                             userHashMap["isOnline"] = true
                                             //userHashMap["profilePicture"] = selectedImageUri.toString()
 
@@ -457,12 +453,6 @@ fun RegistrationUI() {
                                                                     "Registration Successful",
                                                                     Toast.LENGTH_SHORT
                                                                 ).show()
-
-                                                                // Update data and save to SharedPreferences
-                                                                preferencesManager.saveAreaOfInterest(
-                                                                    "areaOfInterest",
-                                                                    areaOfInterest.capitalizeWords().trim()
-                                                                )
 
                                                                 (context as Activity).finish()
 

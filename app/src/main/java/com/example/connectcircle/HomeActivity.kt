@@ -114,12 +114,10 @@ class HomeActivity : ComponentActivity() {
                         userDocumentId = document.id
 
                         val application : Application = application
-                        val appId : Long = 150939430
-                        val appSign = "7baacd535f0cb1ff1e014916eda9107a2e0ae056507243a685081a6cf12c4c45"
                         val userName : String = user.fullName
                         val userId : String = document.id
                         val callInvitationConfig = ZegoUIKitPrebuiltCallInvitationConfig()
-                        ZegoUIKitPrebuiltCallService.init(application,appId,appSign,userId,userName,callInvitationConfig)
+                        ZegoUIKitPrebuiltCallService.init(application,Constants.appId,Constants.appSign,userId,userName,callInvitationConfig)
 
                         getOnlineUsers(user.areaOfInterest)
 
@@ -144,10 +142,9 @@ class HomeActivity : ComponentActivity() {
             .addOnSuccessListener { documents ->
                 try {
                     if (documents != null) {
+                        usersList.clear()
                         for (document in documents) {
                             Log.d("TAG", "${document.id} => ${document.data}")
-
-                            usersList.clear()
 
                             if (document.get("isOnline") == true){
 

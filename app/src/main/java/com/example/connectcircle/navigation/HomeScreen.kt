@@ -1,9 +1,11 @@
 package com.example.connectcircle.navigation
 
+import android.content.Context
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -53,6 +55,8 @@ import com.example.connectcircle.models.UsersModels
 import com.example.connectcircle.utils.Constants.Companion.capitalizeWords
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.zegocloud.zimkit.common.ZIMKitRouter
+import com.zegocloud.zimkit.common.enums.ZIMKitConversationType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,8 +89,7 @@ fun HomeScreen(userDocumentId: String) {
             )
         },
         containerColor = MaterialTheme.colorScheme.primary,
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = Modifier.fillMaxSize()
 
     ) { it ->
 
@@ -97,8 +100,10 @@ fun HomeScreen(userDocumentId: String) {
             shape = RoundedCornerShape(topStart = 50.dp)
         ) {
 
-            Column(modifier = Modifier
-                .fillMaxSize()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
 
                 OutlinedTextField(
                     value = search,
@@ -110,7 +115,8 @@ fun HomeScreen(userDocumentId: String) {
                         onDone = {
 
                             val mFirestore = FirebaseFirestore.getInstance()
-                            mFirestore.firestoreSettings = FirebaseFirestoreSettings.Builder().build()
+                            mFirestore.firestoreSettings =
+                                FirebaseFirestoreSettings.Builder().build()
 
 
                             mFirestore
@@ -120,10 +126,9 @@ fun HomeScreen(userDocumentId: String) {
                                 .addOnSuccessListener { documents ->
                                     try {
                                         if (documents != null) {
+                                            usersList.clear()
                                             for (document in documents) {
                                                 Log.d("TAG", "${document.id} => ${document.data}")
-
-                                                usersList.clear()
 
                                                 usersList.add(
                                                     UsersModels(
@@ -142,7 +147,11 @@ fun HomeScreen(userDocumentId: String) {
 
 //                    Toast.makeText(context, "DocumentSnapshot read successfully!", Toast.LENGTH_LONG).show()
                                         } else {
-                                            Toast.makeText(context, "No such Users", Toast.LENGTH_LONG)
+                                            Toast.makeText(
+                                                context,
+                                                "No such Users",
+                                                Toast.LENGTH_LONG
+                                            )
                                                 .show()
                                         }
                                     } catch (ex: Exception) {
@@ -184,6 +193,8 @@ fun HomeScreen(userDocumentId: String) {
 
                         items(usersList.size) { users ->
                             ListUI(
+                                context,
+                                usersList[users].id,
                                 usersList[users].profilePicture,
                                 usersList[users].fullName,
                                 usersList[users].areaOfInterest,
@@ -202,11 +213,27 @@ fun HomeScreen(userDocumentId: String) {
 
 
 @Composable
-fun ListUI(profilePicture: String, fullName: String, areaOfInterest: String, online: Any?) {
+fun ListUI(
+    context: Context,
+    userId: String,
+    profilePicture: String,
+    fullName: String,
+    areaOfInterest: String,
+    online: Any?
+) {
 
     Card(
         Modifier
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clickable {
+
+                ZIMKitRouter.toMessageActivity(
+                    context,
+                    userId,
+                    ZIMKitConversationType.ZIMKitConversationTypePeer
+                )
+
+            },
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
 
