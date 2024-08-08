@@ -94,4 +94,6 @@ dependencies {
     //Zegocloud
     implementation("com.github.ZEGOCLOUD:zego_uikit_prebuilt_call_android:+")
     implementation("com.github.ZEGOCLOUD:zego_inapp_chat_uikit_android:+")
+
+    implementation ("io.agora.rtc:chat-sdk:1.2.1")
 }

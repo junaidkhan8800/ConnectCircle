@@ -1,6 +1,7 @@
 package com.example.connectcircle.navigation
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -50,6 +51,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
+import com.example.connectcircle.ChatScreenActivity
 import com.example.connectcircle.R
 import com.example.connectcircle.models.UsersModels
 import com.example.connectcircle.utils.Constants.Companion.capitalizeWords
@@ -227,11 +229,7 @@ fun ListUI(
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable {
 
-                ZIMKitRouter.toMessageActivity(
-                    context,
-                    userId,
-                    ZIMKitConversationType.ZIMKitConversationTypePeer
-                )
+                context.startActivity(Intent(context,ChatScreenActivity::class.java))
 
             },
         elevation = CardDefaults.cardElevation(4.dp)
