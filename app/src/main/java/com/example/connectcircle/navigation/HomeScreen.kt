@@ -51,14 +51,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
-import com.example.connectcircle.ChatScreenActivity
+import com.example.chatapp.ChatScreenActivity
 import com.example.connectcircle.R
 import com.example.connectcircle.models.UsersModels
 import com.example.connectcircle.utils.Constants.Companion.capitalizeWords
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
-import com.zegocloud.zimkit.common.ZIMKitRouter
-import com.zegocloud.zimkit.common.enums.ZIMKitConversationType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -195,6 +193,7 @@ fun HomeScreen(userDocumentId: String) {
 
                         items(usersList.size) { users ->
                             ListUI(
+                                userDocumentId,
                                 context,
                                 usersList[users].id,
                                 usersList[users].profilePicture,
@@ -216,6 +215,7 @@ fun HomeScreen(userDocumentId: String) {
 
 @Composable
 fun ListUI(
+    userDocumentId: String,
     context: Context,
     userId: String,
     profilePicture: String,
@@ -229,7 +229,11 @@ fun ListUI(
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable {
 
-                context.startActivity(Intent(context,ChatScreenActivity::class.java))
+                val intent = Intent(context, ChatScreenActivity::class.java)
+                intent.putExtra("userId",userDocumentId)
+                intent.putExtra("recipientId", userId)
+
+                context.startActivity(Intent(context, ChatScreenActivity::class.java))
 
             },
         elevation = CardDefaults.cardElevation(4.dp)
