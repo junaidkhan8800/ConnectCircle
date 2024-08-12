@@ -51,7 +51,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
-import com.example.chatapp.ChatScreenActivity
+import com.example.connectcircle.ChatActivity
 import com.example.connectcircle.R
 import com.example.connectcircle.models.UsersModels
 import com.example.connectcircle.utils.Constants.Companion.capitalizeWords
@@ -229,11 +229,11 @@ fun ListUI(
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable {
 
-                val intent = Intent(context, ChatScreenActivity::class.java)
+                val intent = Intent(context, ChatActivity::class.java)
                 intent.putExtra("userId",userDocumentId)
                 intent.putExtra("recipientId", userId)
 
-                context.startActivity(Intent(context, ChatScreenActivity::class.java))
+                context.startActivity(intent)
 
             },
         elevation = CardDefaults.cardElevation(4.dp)

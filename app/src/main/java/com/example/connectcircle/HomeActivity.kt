@@ -34,8 +34,6 @@ import com.example.connectcircle.utils.Constants
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
-import com.zegocloud.uikit.prebuilt.call.ZegoUIKitPrebuiltCallService
-import com.zegocloud.uikit.prebuilt.call.invite.ZegoUIKitPrebuiltCallInvitationConfig
 
 class HomeActivity : ComponentActivity() {
 
@@ -87,10 +85,6 @@ class HomeActivity : ComponentActivity() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        ZegoUIKitPrebuiltCallService.unInit()
-    }
 
     private fun getUserData() {
 
@@ -111,13 +105,7 @@ class HomeActivity : ComponentActivity() {
                         userData.email = user.email
                         userData.areaOfInterest = user.areaOfInterest
 
-                        userDocumentId = document.id
-
-                        val application : Application = application
-                        val userName : String = user.fullName
-                        val userId : String = document.id
-                        val callInvitationConfig = ZegoUIKitPrebuiltCallInvitationConfig()
-                        ZegoUIKitPrebuiltCallService.init(application,Constants.appId,Constants.appSign,userId,userName,callInvitationConfig)
+                        userDocumentId = mAuth.currentUser?.uid!!
 
                         getOnlineUsers(user.areaOfInterest)
 

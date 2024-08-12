@@ -47,7 +47,7 @@
             android:exported="true"
             android:theme="@style/Theme.ConnectCircle"/>
 
-        <activity android:name="com.example.connectcircle.ChatScreenActivity"
+        <activity android:name="com.example.connectcircle.ChatActivity"
             android:exported="true"
             android:theme="@style/Theme.ConnectCircle"/>
 

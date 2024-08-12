@@ -91,9 +91,8 @@ dependencies {
     //Material Icons
     implementation("androidx.compose.material:material-icons-extended:1.6.8")
 
-    //Zegocloud
-    implementation("com.github.ZEGOCLOUD:zego_uikit_prebuilt_call_android:+")
-    implementation("com.github.ZEGOCLOUD:zego_inapp_chat_uikit_android:+")
-
+    //Agora Chat SDK
     implementation ("io.agora.rtc:chat-sdk:1.2.1")
+
+    implementation("androidx.compose.runtime:runtime-livedata:1.6.8")
 }

@@ -13,6 +13,17 @@ class Constants {
         const val appId : Long = 150939430
         const val appSign = "7baacd535f0cb1ff1e014916eda9107a2e0ae056507243a685081a6cf12c4c45"
 
+        const val TAG = "connect-circle"
+
+        const val MESSAGES = "messages"
+        const val MESSAGE = "message"
+        const val SENT_BY = "sent_by"
+        const val SENT_ON = "sent_on"
+        const val SENT_TO = "sent_to"
+        const val CHATS = "chats"
+        const val RECIPIENT_ID = "recipient_id"
+        const val IS_CURRENT_USER = "is_current_user"
+
         //Extension Function
         fun String.capitalizeWords(delimiter: String = " ") =
             split(delimiter).joinToString(delimiter) { word ->

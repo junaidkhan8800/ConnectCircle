@@ -2,22 +2,16 @@ package com.example.connectcircle
 
 import android.app.Application
 import com.example.connectcircle.utils.Constants
-import com.zegocloud.uikit.service.defines.ZegoUIKitUser
-import com.zegocloud.zimkit.services.ZIMKit
+import com.google.firebase.FirebaseApp
 
 class MyApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-
-        initZegoCloud()
+        FirebaseApp.initializeApp(this)
 
     }
 
-    private fun initZegoCloud() {
-        ZIMKit.initWith(this, Constants.appId, Constants.appSign)
-        ZIMKit.initNotifications()
-    }
 
 //    fun startVideoCall(targetUserId : String){
 //
