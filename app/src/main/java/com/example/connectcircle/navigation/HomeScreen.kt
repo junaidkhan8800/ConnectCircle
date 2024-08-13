@@ -230,8 +230,9 @@ fun ListUI(
             .clickable {
 
                 val intent = Intent(context, ChatActivity::class.java)
-                intent.putExtra("userId",userDocumentId)
                 intent.putExtra("recipientId", userId)
+                intent.putExtra("fullName", fullName)
+                intent.putExtra("profilePicture", profilePicture)
 
                 context.startActivity(intent)
 

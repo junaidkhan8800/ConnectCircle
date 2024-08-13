@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,13 +25,16 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.VideoCall
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -42,11 +47,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.rememberAsyncImagePainter
 import com.example.connectcircle.ui.theme.ConnectCircleTheme
 import com.example.connectcircle.utils.Constants
 import com.google.firebase.auth.FirebaseAuth
@@ -59,6 +67,7 @@ class ChatActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContent {
             ConnectCircleTheme {
 
@@ -67,14 +76,20 @@ class ChatActivity : ComponentActivity() {
                 val recipientId = intent.getStringExtra("recipientId")
                     ?: throw IllegalArgumentException("Recipient ID is missing")
 
-                Log.e("userId", userId)
-                Log.e("recipientId", recipientId)
+                val fullName = intent.getStringExtra("fullName")
+                    ?: throw IllegalArgumentException("Name is missing")
+
+                val profilePicture = intent.getStringExtra("profilePicture")
+                    ?: throw IllegalArgumentException("Profile Picture is missing")
+
 
                 // Initialize ChatViewModel
                 val chatViewModel: ChatViewModel = viewModel()
 
                 // Set the recipient ID after initialization
                 chatViewModel.setRecipientId(recipientId)
+                chatViewModel.setFullName(fullName)
+                chatViewModel.setProfilePicture(profilePicture)
 
                 ChatAppUI(chatViewModel)
 
@@ -91,10 +106,28 @@ fun ChatAppUI(chatViewModel: ChatViewModel) {
     val message: String by chatViewModel.message.observeAsState("")
     val messages: List<Map<String, Any>> by chatViewModel.messages.observeAsState(emptyList())
 
+    val fullName: String by chatViewModel.fullName.observeAsState("")
+    val profilePicture: String by chatViewModel.profilePicture.observeAsState("")
+
+    //title = { Text(text = "Chat", color = Color.Black) },
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(text = "Chat", color = Color.Black) },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Surface(shape = RoundedCornerShape(100.dp)) {
+                            Image(
+                                rememberAsyncImagePainter(profilePicture),
+                                contentDescription = "Profile Image",
+                                modifier = Modifier.size(50.dp),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                        Text(text = fullName,modifier = Modifier.padding(8.dp),
+                            color = Color.Black)
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary
                 ),
@@ -144,7 +177,9 @@ fun ChatAppUI(chatViewModel: ChatViewModel) {
                 }
             }
             Row(
-                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -166,7 +201,9 @@ fun ChatAppUI(chatViewModel: ChatViewModel) {
                     singleLine = true,
                 )
                 IconButton(
-                    modifier = Modifier.padding(start = 16.dp, top = 8.dp).size(58.dp),
+                    modifier = Modifier
+                        .padding(start = 16.dp, top = 8.dp)
+                        .size(58.dp),
                     colors = IconButtonDefaults.iconButtonColors(
                         containerColor = MaterialTheme.colorScheme.primary
                     ),
@@ -188,22 +225,29 @@ fun ChatAppUI(chatViewModel: ChatViewModel) {
 
 @Composable
 fun SingleMessage(message: String, isCurrentUser: Boolean) {
-    Card(
-        shape = RoundedCornerShape(16.dp),
-//        colors = if (isCurrentUser) MaterialTheme.colorScheme.primary else Color.White
-    ) {
-        Text(
-            text = message,
-            textAlign =
-            if (isCurrentUser)
-                TextAlign.End
-            else
-                TextAlign.Start,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            color = if (!isCurrentUser) MaterialTheme.colorScheme.primary else Color.White
-        )
+    Box(modifier = Modifier.fillMaxSize()) {
+        Card(
+            modifier = if (isCurrentUser) Modifier.align(Alignment.CenterEnd) else Modifier.align(
+                Alignment.CenterStart
+            ),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = if (isCurrentUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.inversePrimary
+            )
+        ) {
+            Text(
+                text = message,
+                textAlign =
+                if (isCurrentUser)
+                    TextAlign.End
+                else
+                    TextAlign.Start,
+                modifier = Modifier
+                    .padding(16.dp),
+//                color = if (!isCurrentUser) MaterialTheme.colorScheme.primary else Color.White
+//                color = Color.Black
+            )
+        }
     }
 }
 

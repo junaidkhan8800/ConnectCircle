@@ -147,12 +147,8 @@ class HomeActivity : ComponentActivity() {
                                         document.get("isOnline")
                                     )
                                 )
-
                             }
-
-
                         }
-
 
 //                    Toast.makeText(context, "DocumentSnapshot read successfully!", Toast.LENGTH_LONG).show()
                     } else {

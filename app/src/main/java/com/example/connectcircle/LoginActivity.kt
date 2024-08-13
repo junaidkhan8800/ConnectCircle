@@ -69,8 +69,7 @@ class LoginActivity : ComponentActivity() {
 
         installSplashScreen()
 
-
-        mAuth.currentUser?.uid?.let { PresenceManager.updatePresence(it, true) }
+//        mAuth.currentUser?.uid?.let { PresenceManager.updatePresence(it, true) }
 
         if (mAuth.currentUser != null) {
 

@@ -429,7 +429,7 @@ fun RegistrationUI() {
                                             userHashMap["areaOfInterest"] =
                                                 areaOfInterest.capitalizeWords().trim()
 //                                            userHashMap["password"] = password.trim()
-                                            userHashMap["isOnline"] = true
+//                                            userHashMap["isOnline"] = true
                                             //userHashMap["profilePicture"] = selectedImageUri.toString()
 
                                             //Adding User Image

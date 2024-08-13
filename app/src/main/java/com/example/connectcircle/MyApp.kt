@@ -1,39 +1,95 @@
 package com.example.connectcircle
 
+import android.app.Activity
 import android.app.Application
-import com.example.connectcircle.utils.Constants
+import android.os.Bundle
+import android.util.Log
 import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
 
 class MyApp : Application() {
 
+    private var activityReferences = 0
+    private var isActivityChangingConfigurations = false
+
     override fun onCreate() {
         super.onCreate()
+
         FirebaseApp.initializeApp(this)
 
+        registerActivityLifecycleCallbacks(activityLifecycleCallbacks)
+
+        Log.e("ApplicationClass", "onCreate")
     }
 
+    private val activityLifecycleCallbacks = object : ActivityLifecycleCallbacks {
+        override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
 
-//    fun startVideoCall(targetUserId : String){
-//
-//        val targetUserName = targetUserId
-//
-//        videoCallButton.setIsVideoCall(true)
-//        videoCallButton.resourceId = "zego_uikit_call"
-//        videoCallButton.setInvitees(listOf(ZegoUIKitUser(targetUserId,targetUserName)))
-//
-//
-//    }
+        override fun onActivityStarted(activity: Activity) {
+            if (++activityReferences == 1 && !isActivityChangingConfigurations) {
+                // App enters foreground
+                val userId = FirebaseAuth.getInstance().currentUser?.uid
+                Log.e("ApplicationClass", "App in foreground")
+                if (!userId.isNullOrEmpty()) {
+                    makeUserOnline(userId)
+                }
+            }
+        }
 
+        override fun onActivityResumed(activity: Activity) {}
 
-//    fun startVoiceCall(targetUserId : String){
-//
-//        val targetUserName = targetUserId
-//
-//        voiceCallButton.setIsVideoCall(false)
-//        voiceCallButton.resourceId = "zego_uikit_call"
-//        voiceCallButton.setInvitees(listOf(ZegoUIKitUser(targetUserId,targetUserName)))
-//
-//
-//    }
+        override fun onActivityPaused(activity: Activity) {}
 
+        override fun onActivityStopped(activity: Activity) {
+            isActivityChangingConfigurations = activity.isChangingConfigurations
+            if (--activityReferences == 0 && !isActivityChangingConfigurations) {
+                // App enters background
+                val userId = FirebaseAuth.getInstance().currentUser?.uid
+                Log.e("ApplicationClass", "App in background")
+                if (!userId.isNullOrEmpty()) {
+                    makeUserOffline(userId)
+                }
+            }
+        }
+
+        override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+
+        override fun onActivityDestroyed(activity: Activity) {}
+    }
+
+    private fun makeUserOnline(userId: String?) {
+        // Create a partial UsersModels object with only the online status
+        val userStatusUpdate = mapOf("isOnline" to true)
+
+        // Firestore: Update the existing document without overwriting other fields
+        val query = FirebaseFirestore.getInstance().collection("users").document(userId ?: "")
+        query.set(userStatusUpdate, SetOptions.merge())
+            .addOnSuccessListener { Log.e("ApplicationClass", "User is online") }
+            .addOnFailureListener { e -> Log.e("ApplicationClass", "Error updating user status", e) }
+
+        // Firebase Realtime Database status
+        FirebaseDatabase.getInstance().getReference("status/$userId").setValue("online")
+
+        // Set up the disconnect hook to mark offline when connection is lost
+        FirebaseDatabase.getInstance().getReference("/status/$userId")
+            .onDisconnect()
+            .setValue("offline")
+    }
+
+    fun makeUserOffline(userId: String?) {
+        // Create a partial UsersModels object with only the offline status
+        val userStatusUpdate = mapOf("isOnline" to false)
+
+        // Firestore: Update the existing document without overwriting other fields
+        val query = FirebaseFirestore.getInstance().collection("users").document(userId ?: "")
+        query.set(userStatusUpdate, SetOptions.merge())
+            .addOnSuccessListener { Log.e("ApplicationClass", "User is offline") }
+            .addOnFailureListener { e -> Log.e("ApplicationClass", "Error updating user status", e) }
+
+        // Firebase Realtime Database status
+        FirebaseDatabase.getInstance().getReference("status/$userId").setValue("offline")
+    }
 }

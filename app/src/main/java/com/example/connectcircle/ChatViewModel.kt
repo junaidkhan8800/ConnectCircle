@@ -15,6 +15,12 @@ class ChatViewModel : ViewModel() {
     private val _recipientId = MutableLiveData<String>()
     val recipientId: LiveData<String> = _recipientId
 
+    private val _fullName = MutableLiveData<String>()
+    val fullName: LiveData<String> = _fullName
+
+    private val _profilePicture = MutableLiveData<String>()
+    val profilePicture: LiveData<String> = _profilePicture
+
     private val _message = MutableLiveData("")
     val message: LiveData<String> = _message
 
@@ -24,6 +30,14 @@ class ChatViewModel : ViewModel() {
     fun setRecipientId(recipientId: String) {
         _recipientId.value = recipientId
         getMessages()
+    }
+
+    fun setFullName(fullName: String) {
+        _fullName.value = fullName
+    }
+
+    fun setProfilePicture(profilePicture: String) {
+        _profilePicture.value = profilePicture
     }
 
     /**
