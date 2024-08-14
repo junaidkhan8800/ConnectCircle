@@ -33,8 +33,10 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.twotone.Person
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -62,6 +64,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.connectcircle.ui.theme.ConnectCircleTheme
 import com.example.connectcircle.utils.Constants.Companion.capitalizeWords
@@ -101,15 +104,15 @@ class RegistrationActivity : ComponentActivity() {
 @Composable
 fun RegistrationUI() {
 
-
     val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
     val mAuth: FirebaseAuth = FirebaseAuth.getInstance()
     val userId = mAuth.currentUser?.uid
     val profileImagePath = "UserImages/$userId/profile_picture.jpg"
-    var storageReference: StorageReference =
+    val storageReference: StorageReference =
         FirebaseStorage.getInstance().reference.child(profileImagePath)
 
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    var isLoading by remember { mutableStateOf(false) } // Loading state
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
@@ -140,9 +143,7 @@ fun RegistrationUI() {
             )
         },
         containerColor = MaterialTheme.colorScheme.primary,
-        modifier = Modifier
-            .fillMaxSize()
-
+        modifier = Modifier.fillMaxSize()
     ) { it ->
         Surface(
             modifier = Modifier
@@ -151,26 +152,23 @@ fun RegistrationUI() {
             shape = RoundedCornerShape(topStart = 50.dp)
         ) {
             LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize(),
+                modifier = Modifier.fillMaxSize(),
             ) {
 
-                item{
+                item {
 
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize(),
+                        modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
 
                         Box(
                             contentAlignment = Alignment.Center,
-                            modifier = Modifier
-                                .padding(16.dp)
+                            modifier = Modifier.padding(16.dp)
                         ) {
                             Surface(shape = RoundedCornerShape(100.dp)) {
 
-                                if (selectedImageUri != null){
+                                if (selectedImageUri != null) {
 
                                     AsyncImage(
                                         modifier = Modifier.size(150.dp),
@@ -179,7 +177,7 @@ fun RegistrationUI() {
                                         contentScale = ContentScale.Crop
                                     )
 
-                                }else{
+                                } else {
 
                                     Icon(
                                         imageVector = Icons.Default.Person,
@@ -206,7 +204,8 @@ fun RegistrationUI() {
                                     )
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Edit, contentDescription = "Edit Image",
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Edit Image",
                                     modifier = Modifier
                                         .size(50.dp)
                                         .padding(8.dp)
@@ -223,8 +222,6 @@ fun RegistrationUI() {
                                 .padding(horizontal = 16.dp, vertical = 8.dp),
                             maxLines = 1,
                             label = { Text(text = "Full Name") })
-
-
 
                         OutlinedTextField(value = mobileNumber,
                             onValueChange = {
@@ -275,7 +272,8 @@ fun RegistrationUI() {
                                     Icons.Filled.Visibility
                                 else Icons.Filled.VisibilityOff
 
-                                val description = if (passwordVisible) "Hide Password" else "Show Password"
+                                val description =
+                                    if (passwordVisible) "Hide Password" else "Show Password"
 
                                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                     Icon(imageVector = image, description)
@@ -298,18 +296,18 @@ fun RegistrationUI() {
                                     Icons.Filled.Visibility
                                 else Icons.Filled.VisibilityOff
 
-                                val description = if (passwordVisible) "Hide Password" else "Show Password"
+                                val description =
+                                    if (passwordVisible) "Hide Password" else "Show Password"
 
                                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                     Icon(imageVector = image, description)
                                 }
                             })
 
-
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(start = 8.dp, end = 16.dp,top = 16.dp),
+                                .padding(start = 8.dp, end = 16.dp, top = 16.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Start
                         ) {
@@ -343,8 +341,7 @@ fun RegistrationUI() {
                                         context,
                                         "Please enter Mobile Number",
                                         Toast.LENGTH_LONG
-                                    )
-                                        .show()
+                                    ).show()
 
                                 } else if (mobileNumber.length < 10) {
 
@@ -352,8 +349,7 @@ fun RegistrationUI() {
                                         context,
                                         "Please enter valid Mobile Number",
                                         Toast.LENGTH_LONG
-                                    )
-                                        .show()
+                                    ).show()
 
                                 } else if (TextUtils.isEmpty(email)) {
 
@@ -366,8 +362,7 @@ fun RegistrationUI() {
                                         context,
                                         "Please enter Area of Interest",
                                         Toast.LENGTH_LONG
-                                    )
-                                        .show()
+                                    ).show()
 
                                 } else if (TextUtils.isEmpty(password)) {
 
@@ -391,8 +386,7 @@ fun RegistrationUI() {
                                         context,
                                         "Please enter Confirm Password",
                                         Toast.LENGTH_LONG
-                                    )
-                                        .show()
+                                    ).show()
 
                                 } else if (password != confirmPassword) {
 
@@ -408,88 +402,105 @@ fun RegistrationUI() {
                                         context,
                                         "Please accept Terms and Conditions",
                                         Toast.LENGTH_LONG
-                                    )
-                                        .show()
+                                    ).show()
 
                                 } else {
 
-                                    mAuth.createUserWithEmailAndPassword(email,password).addOnCompleteListener {
+                                    isLoading = true // Start loading
 
-                                        if (it.isSuccessful) {
+                                    mAuth.createUserWithEmailAndPassword(email, password)
+                                        .addOnCompleteListener {
 
-                                            val documentReference =
-                                                firestore.collection("users").document(it.result.user!!.uid)
+                                            if (it.isSuccessful) {
 
-                                            //Adding User Data to HashMap
-                                            val userHashMap: HashMap<String, Any> = HashMap()
+                                                val documentReference =
+                                                    firestore.collection("users")
+                                                        .document(it.result.user!!.uid)
 
-                                            userHashMap["fullName"] = name.trim()
-                                            userHashMap["mobileNumber"] = mobileNumber.trim()
-                                            userHashMap["email"] = email.trim()
-                                            userHashMap["areaOfInterest"] =
-                                                areaOfInterest.capitalizeWords().trim()
-//                                            userHashMap["password"] = password.trim()
-//                                            userHashMap["isOnline"] = true
-                                            //userHashMap["profilePicture"] = selectedImageUri.toString()
+                                                //Adding User Data to HashMap
+                                                val userHashMap: HashMap<String, Any> = HashMap()
 
-                                            //Adding User Image
-                                            storageReference =
-                                                storageReference.child(System.currentTimeMillis().toString())
+                                                userHashMap["fullName"] = name.trim()
+                                                userHashMap["mobileNumber"] = mobileNumber.trim()
+                                                userHashMap["email"] = email.trim()
+                                                userHashMap["areaOfInterest"] =
+                                                    areaOfInterest.trim()
 
+                                                storageReference.putFile(selectedImageUri!!)
+                                                    .addOnSuccessListener {
 
-                                            storageReference.putFile(selectedImageUri!!)
-                                                .addOnSuccessListener { task ->
+                                                        storageReference.downloadUrl.addOnSuccessListener { uri ->
 
-                                                    storageReference.downloadUrl.addOnSuccessListener { uri ->
+                                                            userHashMap["profileImage"] =
+                                                                uri.toString()
 
-                                                        // Update profilePicture in userHashMap with download URL
-                                                        userHashMap["profilePicture"] = uri.toString()
+                                                            documentReference.set(userHashMap)
+                                                                .addOnSuccessListener {
 
+                                                                    isLoading =
+                                                                        false // Stop loading
+                                                                    Toast.makeText(
+                                                                        context,
+                                                                        "Registered Successfully!",
+                                                                        Toast.LENGTH_LONG
+                                                                    ).show()
 
-                                                        documentReference.set(userHashMap)
-                                                            .addOnSuccessListener {
-                                                                Toast.makeText(
-                                                                    context,
-                                                                    "Registration Successful",
-                                                                    Toast.LENGTH_SHORT
-                                                                ).show()
+                                                                }
+                                                                .addOnFailureListener { exception ->
 
-                                                                (context as Activity).finish()
+                                                                    isLoading =
+                                                                        false // Stop loading
+                                                                    Toast.makeText(
+                                                                        context,
+                                                                        "Error occurred: ${exception.message}",
+                                                                        Toast.LENGTH_LONG
+                                                                    ).show()
 
+                                                                }
 
-                                                            }.addOnFailureListener { e ->
-                                                                Toast.makeText(
-                                                                    context,
-                                                                    "Failed to register: ${e.message}",
-                                                                    Toast.LENGTH_SHORT
-                                                                ).show()
-                                                            }
-                                                    }
+                                                        }
+
+                                                    }.addOnFailureListener { exception ->
+
+                                                    isLoading = false // Stop loading
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Error occurred: ${exception.message}",
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+
                                                 }
 
+                                            }
+
                                         }
-
-                                    }.addOnFailureListener {
-                                        Toast.makeText(
-                                            context,
-                                            "Failed to register: ${it.message}",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    }
-
                                 }
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(16.dp)
+                                .padding(16.dp),
                         ) {
-
-                            Text(text = "Register", fontSize = 16.sp)
-
+                            Text(
+                                text = "Register",
+                                fontSize = 16.sp,
+                            )
                         }
-
                     }
                 }
+            }
+        }
+    }
+
+    // Progress Dialog
+    if (isLoading) {
+        Dialog(onDismissRequest = { /* prevent dismissal */ }) {
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .background(Color.White, shape = RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
         }
     }

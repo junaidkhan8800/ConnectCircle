@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.text.TextUtils
-import android.util.Log
 import android.util.Patterns
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -69,17 +68,13 @@ class LoginActivity : ComponentActivity() {
 
         installSplashScreen()
 
-//        mAuth.currentUser?.uid?.let { PresenceManager.updatePresence(it, true) }
-
         if (mAuth.currentUser != null) {
-
             startActivity(Intent(this, HomeActivity::class.java))
         }
 
         enableEdgeToEdge()
         setContent {
             ConnectCircleTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -89,7 +84,6 @@ class LoginActivity : ComponentActivity() {
             }
         }
     }
-
 }
 
 @Composable
@@ -105,187 +99,191 @@ fun LoginActivityUI(context: Context) {
 
     Scaffold(Modifier.fillMaxSize()) { it ->
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(it)
-                .background(color = MaterialTheme.colorScheme.primary),
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
 
-            Surface(
+            Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .weight(0.3f),
-                color = MaterialTheme.colorScheme.primary
+                    .padding(it)
+                    .background(color = MaterialTheme.colorScheme.primary),
             ) {
 
-                Image(
-                    painter = painterResource(R.drawable.ic_launcher_foreground),
-                    contentDescription = "null",
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
+                Surface(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(0.3f),
+                    color = MaterialTheme.colorScheme.primary
+                ) {
 
-            }
-
-            Surface(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .weight(0.7f),
-                shape = RoundedCornerShape(topStart = 50.dp)
-            ) {
-                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-
-                    Text(
-                        text = "Login", fontSize = 32.sp, fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 24.dp, start = 16.dp)
+                    Image(
+                        painter = painterResource(R.drawable.ic_launcher_foreground),
+                        contentDescription = "null",
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
 
-                    Text(
-                        text = "Enter your Email and Password to proceed with login.",
-                        modifier = Modifier.padding(16.dp), fontSize = 16.sp,
-                    )
+                }
 
-                    OutlinedTextField(value = email,
-                        onValueChange = { email = it },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        singleLine = true,
-                        label = { Text(text = "Email") })
+                Surface(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .weight(0.7f),
+                    shape = RoundedCornerShape(topStart = 50.dp)
+                ) {
+                    Column(modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())) {
 
+                        Text(
+                            text = "Login", fontSize = 32.sp, fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 24.dp, start = 16.dp)
+                        )
 
+                        Text(
+                            text = "Enter your Email and Password to proceed with login.",
+                            modifier = Modifier.padding(16.dp), fontSize = 16.sp,
+                        )
 
-                    OutlinedTextField(value = password, onValueChange = { password = it },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        singleLine = true,
-                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                        label = { Text(text = "Password") },
-                        trailingIcon = {
-                            val image = if (passwordVisible)
-                                Icons.Filled.Visibility
-                            else Icons.Filled.VisibilityOff
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            singleLine = true,
+                            label = { Text(text = "Email") }
+                        )
 
-                            val description =
-                                if (passwordVisible) "Hide Password" else "Show Password"
+                        OutlinedTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            singleLine = true,
+                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            label = { Text(text = "Password") },
+                            trailingIcon = {
+                                val image = if (passwordVisible)
+                                    Icons.Filled.Visibility
+                                else Icons.Filled.VisibilityOff
 
-                            IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(imageVector = image, description)
-                            }
-                        })
+                                val description =
+                                    if (passwordVisible) "Hide Password" else "Show Password"
 
-                    Text(
-                        text = "Forgot Password?",
-                        modifier = Modifier.padding(16.dp),
-                        fontSize = 16.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                    Icon(imageVector = image, description)
+                                }
+                            })
 
-                    Button(modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp), onClick = {
+                        Text(
+                            text = "Forgot Password?",
+                            modifier = Modifier.padding(16.dp),
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
 
-                        if (TextUtils.isEmpty(email)) {
-                            Toast.makeText(context, "Please enter Email", Toast.LENGTH_LONG).show()
-                        } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()){
-                            Toast.makeText(context, "Please enter Email in correct format", Toast.LENGTH_LONG).show()
+                        Button(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp), onClick = {
+
+                                if (TextUtils.isEmpty(email)) {
+                                    Toast.makeText(context, "Please enter Email", Toast.LENGTH_LONG)
+                                        .show()
+                                } else if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                                    Toast.makeText(
+                                        context,
+                                        "Please enter Email in correct format",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                } else if (TextUtils.isEmpty(password)) {
+                                    Toast.makeText(context, "Please enter Password", Toast.LENGTH_LONG)
+                                        .show()
+                                } else {
+
+                                    isLoading = true
+
+                                    mAuth.signInWithEmailAndPassword(email, password)
+                                        .addOnCompleteListener {
+
+                                            if (it.isSuccessful) {
+                                                Toast.makeText(
+                                                    context,
+                                                    "Login successful",
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+
+                                                isLoading = false
+
+                                                context.startActivity(
+                                                    Intent(
+                                                        context,
+                                                        HomeActivity::class.java
+                                                    )
+                                                )
+                                                (context as Activity).finish()
+                                            } else {
+
+                                                isLoading = false
+
+                                                Toast.makeText(
+                                                    context,
+                                                    "Login failed. ${it.exception?.message}",
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+                                            }
+                                        }
+                                }
+                            }) {
+                            Text(text = "Login", fontSize = 16.sp)
                         }
-                        else if (TextUtils.isEmpty(password)) {
-                            Toast.makeText(context, "Please enter Password", Toast.LENGTH_LONG)
-                                .show()
-                        } else {
 
-                            isLoading = true
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
 
-                            mAuth.signInWithEmailAndPassword(email, password)
-                                .addOnCompleteListener {
+                            Text(
+                                text = "Don't have an account?",
+                                fontSize = 16.sp
+                            )
 
-                                    if (it.isSuccessful) {
-                                        Toast.makeText(
-                                            context,
-                                            "Login successful",
-                                            Toast.LENGTH_LONG
-                                        ).show()
-
-                                        isLoading = false
-
+                            Text(
+                                text = "Register",
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier
+                                    .padding(start = 8.dp)
+                                    .clickable {
                                         context.startActivity(
                                             Intent(
                                                 context,
-                                                HomeActivity::class.java
+                                                RegistrationActivity::class.java
                                             )
                                         )
-                                        (context as Activity).finish()
-                                    } else {
-
-                                        isLoading = false
-
-                                        Toast.makeText(
-                                            context,
-                                            "Login failed. ${it.exception?.message}",
-                                            Toast.LENGTH_LONG
-                                        ).show()
-                                    }
-                                }
-
+                                    },
+                                fontSize = 16.sp,
+                            )
                         }
-
-                    }) {
-                        Text(text = "Login", fontSize = 16.sp)
                     }
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-
-                        Text(
-                            text = "Don't have an account?",
-                            fontSize = 16.sp
-                        )
-
-                        Text(
-                            text = "Register",
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier
-                                .padding(start = 8.dp)
-                                .clickable {
-                                    context.startActivity(
-                                        Intent(
-                                            context,
-                                            RegistrationActivity::class.java
-                                        )
-                                    )
-                                },
-                            fontSize = 16.sp,
-                        )
-
-                    }
-
                 }
             }
 
-
-//            if (isLoading) {
-//
-//                Box(
-//                    modifier = Modifier.fillMaxSize()
-//                        .background(Color.Black.copy(alpha = 0.5F)),
-//                    contentAlignment = Alignment.Center
-//                ) {
-//                    CircularProgressIndicator()
-//                }
-//
-//            }
-
-
+            if (isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.5F)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+            }
         }
     }
 }

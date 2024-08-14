@@ -1,7 +1,8 @@
 package com.example.connectcircle
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -30,7 +30,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -41,14 +40,11 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -58,7 +54,8 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.connectcircle.ui.theme.ConnectCircleTheme
 import com.example.connectcircle.utils.Constants
 import com.google.firebase.auth.FirebaseAuth
-import io.agora.chat.ChatClient
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 
 
 class ChatActivity : ComponentActivity() {
@@ -91,7 +88,7 @@ class ChatActivity : ComponentActivity() {
                 chatViewModel.setFullName(fullName)
                 chatViewModel.setProfilePicture(profilePicture)
 
-                ChatAppUI(chatViewModel)
+                ChatAppUI(chatViewModel,recipientId)
 
             }
         }
@@ -101,13 +98,15 @@ class ChatActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatAppUI(chatViewModel: ChatViewModel) {
+fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String) {
 
     val message: String by chatViewModel.message.observeAsState("")
     val messages: List<Map<String, Any>> by chatViewModel.messages.observeAsState(emptyList())
 
     val fullName: String by chatViewModel.fullName.observeAsState("")
     val profilePicture: String by chatViewModel.profilePicture.observeAsState("")
+
+    val context = LocalContext.current
 
     //title = { Text(text = "Chat", color = Color.Black) },
 
@@ -124,8 +123,10 @@ fun ChatAppUI(chatViewModel: ChatViewModel) {
                                 contentScale = ContentScale.Crop
                             )
                         }
-                        Text(text = fullName,modifier = Modifier.padding(8.dp),
-                            color = Color.Black)
+                        Text(
+                            text = fullName, modifier = Modifier.padding(8.dp),
+                            color = Color.Black
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -136,14 +137,14 @@ fun ChatAppUI(chatViewModel: ChatViewModel) {
                         Icon(
                             tint = Color.Black,
                             imageVector = Icons.Filled.Call,
-                            contentDescription = "Search"
+                            contentDescription = "Call"
                         )
                     }
-                    IconButton(onClick = { /* Handle favorite click */ }) {
+                    IconButton(onClick = { startVideoCall(recipientId, context) }) {
                         Icon(
                             tint = Color.Black,
                             imageVector = Icons.Filled.VideoCall,
-                            contentDescription = "Favorite"
+                            contentDescription = "Video Call"
                         )
                     }
                 }
@@ -222,6 +223,18 @@ fun ChatAppUI(chatViewModel: ChatViewModel) {
     }
 }
 
+fun startVideoCall(recipientId: String, context: Context) {
+
+//    val currentUserId = Firebase.auth.currentUser?.uid ?: ""
+//
+//    // Start the VideoCallActivity and pass the necessary user IDs
+//    val intent = Intent(context, VideoCallActivity::class.java)
+//    intent.putExtra("callerId", currentUserId)
+//    intent.putExtra("recipientId", recipientId)
+//    context.startActivity(intent)
+
+}
+
 
 @Composable
 fun SingleMessage(message: String, isCurrentUser: Boolean) {
@@ -258,6 +271,6 @@ private fun ChatPrev() {
     // Initialize ChatViewModel
     val chatViewModel: ChatViewModel = viewModel()
 
-    ChatAppUI(chatViewModel)
+    ChatAppUI(chatViewModel, "recipientId")
 
 }
