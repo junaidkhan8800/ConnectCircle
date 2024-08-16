@@ -1,10 +1,12 @@
 package com.example.connectcircle.utils
 
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import com.example.connectcircle.models.BottomNavItem
+import com.permissionx.guolindev.PermissionX
 
 class Constants {
 
@@ -33,9 +35,6 @@ class Constants {
 
             }
 
-        //Call
-
-        //Video Call
 
         val BottomNavItems = listOf(
 
@@ -44,6 +43,9 @@ class Constants {
             BottomNavItem(label = "Profile", icon = Icons.Filled.Person, route = "profile")
 
         )
+
+
+
 
     }
 

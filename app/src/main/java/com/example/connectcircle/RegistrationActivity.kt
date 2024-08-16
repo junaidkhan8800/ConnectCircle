@@ -423,8 +423,8 @@ fun RegistrationUI() {
                                                 userHashMap["fullName"] = name.trim()
                                                 userHashMap["mobileNumber"] = mobileNumber.trim()
                                                 userHashMap["email"] = email.trim()
-                                                userHashMap["areaOfInterest"] =
-                                                    areaOfInterest.trim()
+                                                userHashMap["isOnline"] = true
+                                                userHashMap["areaOfInterest"] = areaOfInterest.capitalizeWords().trim()
 
                                                 storageReference.putFile(selectedImageUri!!)
                                                     .addOnSuccessListener {
@@ -437,19 +437,19 @@ fun RegistrationUI() {
                                                             documentReference.set(userHashMap)
                                                                 .addOnSuccessListener {
 
-                                                                    isLoading =
-                                                                        false // Stop loading
+                                                                    isLoading = false // Stop loading
                                                                     Toast.makeText(
                                                                         context,
                                                                         "Registered Successfully!",
                                                                         Toast.LENGTH_LONG
                                                                     ).show()
 
+                                                                    (context as Activity).finish()
+
                                                                 }
                                                                 .addOnFailureListener { exception ->
 
-                                                                    isLoading =
-                                                                        false // Stop loading
+                                                                    isLoading = false // Stop loading
                                                                     Toast.makeText(
                                                                         context,
                                                                         "Error occurred: ${exception.message}",
@@ -473,6 +473,14 @@ fun RegistrationUI() {
 
                                             }
 
+                                        }.addOnFailureListener { exception ->
+
+                                            isLoading = false // Stop loading
+                                            Toast.makeText(
+                                                context,
+                                                "${exception.message}",
+                                                Toast.LENGTH_LONG
+                                            ).show()
                                         }
                                 }
                             },
@@ -491,14 +499,14 @@ fun RegistrationUI() {
         }
     }
 
-    // Progress Dialog
+    // Loading Dialog
     if (isLoading) {
-        Dialog(onDismissRequest = { /* prevent dismissal */ }) {
+        Dialog(onDismissRequest = {}) {
             Box(
+                contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .size(100.dp)
-                    .background(Color.White, shape = RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center
+                    .background(Color.White, shape = RoundedCornerShape(10.dp))
             ) {
                 CircularProgressIndicator()
             }

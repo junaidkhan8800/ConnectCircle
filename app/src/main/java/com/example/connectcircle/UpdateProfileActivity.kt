@@ -51,6 +51,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.core.net.toUri
 import coil.compose.AsyncImage
 import com.example.connectcircle.models.UsersModels
@@ -382,25 +383,20 @@ fun UpdateProfileUI() {
                     }
                 }
 
-                // Show Circular Progress Dialog when loading is true
+                // Loading Dialog
                 if (loading) {
-                    CircularProgressDialog()
+                    Dialog(onDismissRequest = {}) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(100.dp)
+                                .background(Color.White, shape = RoundedCornerShape(10.dp))
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
                 }
             }
         }
-    }
-}
-
-@Composable
-fun CircularProgressDialog() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(color = Color.Black.copy(alpha = 0.5f)),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator(
-            color = MaterialTheme.colorScheme.primary
-        )
     }
 }

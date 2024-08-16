@@ -53,6 +53,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.connectcircle.ui.theme.ConnectCircleTheme
 import com.example.connectcircle.utils.Constants
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -96,7 +98,7 @@ class ChatActivity : ComponentActivity() {
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String) {
 
@@ -107,6 +109,14 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String) {
     val profilePicture: String by chatViewModel.profilePicture.observeAsState("")
 
     val context = LocalContext.current
+
+    // Define permissions to request
+    val cameraPermission = android.Manifest.permission.CAMERA
+    val recordAudioPermission = android.Manifest.permission.RECORD_AUDIO
+
+    val multiplePermissionsState = rememberMultiplePermissionsState(
+        permissions = listOf(cameraPermission, recordAudioPermission)
+    )
 
     //title = { Text(text = "Chat", color = Color.Black) },
 
@@ -133,14 +143,38 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String) {
                     containerColor = MaterialTheme.colorScheme.primary
                 ),
                 actions = {
-                    IconButton(onClick = { /* Handle search click */ }) {
+                    IconButton(onClick = {
+
+                        multiplePermissionsState.launchMultiplePermissionRequest()
+                        if (multiplePermissionsState.allPermissionsGranted) {
+                            // Handle call button click
+                            context.startActivity(Intent(context, CallActivity::class.java).apply {
+                                putExtra("target", recipientId)
+                                putExtra("isVideoCall", false)
+                                putExtra("isCaller", true)
+                            })
+                        }
+
+                    }) {
                         Icon(
                             tint = Color.Black,
                             imageVector = Icons.Filled.Call,
                             contentDescription = "Call"
                         )
                     }
-                    IconButton(onClick = { startVideoCall(recipientId, context) }) {
+                    IconButton(onClick = {
+
+                        multiplePermissionsState.launchMultiplePermissionRequest()
+                        if (multiplePermissionsState.allPermissionsGranted) {
+                            // Handle video call button click
+                            context.startActivity(Intent(context, CallActivity::class.java).apply {
+                                putExtra("target", recipientId)
+                                putExtra("isVideoCall", true)
+                                putExtra("isCaller", true)
+                            })
+                        }
+
+                    }) {
                         Icon(
                             tint = Color.Black,
                             imageVector = Icons.Filled.VideoCall,
@@ -223,17 +257,6 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String) {
     }
 }
 
-fun startVideoCall(recipientId: String, context: Context) {
-
-//    val currentUserId = Firebase.auth.currentUser?.uid ?: ""
-//
-//    // Start the VideoCallActivity and pass the necessary user IDs
-//    val intent = Intent(context, VideoCallActivity::class.java)
-//    intent.putExtra("callerId", currentUserId)
-//    intent.putExtra("recipientId", recipientId)
-//    context.startActivity(intent)
-
-}
 
 
 @Composable

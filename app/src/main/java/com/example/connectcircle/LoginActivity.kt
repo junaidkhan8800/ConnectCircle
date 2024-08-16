@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -53,6 +54,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.connectcircle.ui.theme.ConnectCircleTheme
 import com.google.firebase.auth.FirebaseAuth
@@ -274,14 +276,17 @@ fun LoginActivityUI(context: Context) {
                 }
             }
 
+            // Loading Dialog
             if (isLoading) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.5F)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                Dialog(onDismissRequest = {}) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .size(100.dp)
+                            .background(Color.White, shape = RoundedCornerShape(10.dp))
+                    ) {
+                        CircularProgressIndicator()
+                    }
                 }
             }
         }
