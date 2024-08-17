@@ -19,9 +19,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.firebase.database.ChildEventListener
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
 import org.webrtc.*
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 
 class CallActivity : ComponentActivity() {
 
@@ -30,14 +34,15 @@ class CallActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-
             val recipientId = intent.getStringExtra("target")
                 ?: throw IllegalArgumentException("Recipient ID is missing")
+
+            val isCaller = intent.getBooleanExtra("isCaller", true)
 
             CallScreen(
                 callViewModel = callViewModel,
                 recipientId = recipientId,
-                isCaller = intent.getBooleanExtra("isCaller", true)
+                isCaller = isCaller
             )
         }
     }
@@ -91,6 +96,7 @@ fun CallScreen(callViewModel: CallViewModel, recipientId: String, isCaller: Bool
     }
 }
 
+
 class CallViewModel : ViewModel() {
     private lateinit var peerConnectionFactory: PeerConnectionFactory
     private lateinit var peerConnection: PeerConnection
@@ -118,17 +124,10 @@ class CallViewModel : ViewModel() {
         if (isCaller) {
             startCall()
         } else {
-            answerCall()
+            listenForRemoteOffer()
         }
+        listenForIceCandidates()
     }
-
-    private fun createMediaConstraints(): MediaConstraints {
-        val constraints = MediaConstraints()
-        constraints.mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
-        constraints.mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
-        return constraints
-    }
-
 
     fun initializeSurfaceView(surfaceView: SurfaceViewRenderer) {
         surfaceView.init(EglBase.create().eglBaseContext, null)
@@ -150,8 +149,10 @@ class CallViewModel : ViewModel() {
                 }
 
                 override fun onAddStream(stream: MediaStream?) {
-                    remoteVideoTrack = stream?.videoTracks?.get(0)!!
-                    remoteVideoTrack.addSink(remoteVideoView)
+                    if (stream != null) {
+                        remoteVideoTrack = stream.videoTracks.first()
+                        remoteVideoTrack.addSink(remoteVideoView)
+                    }
                 }
 
                 override fun onSignalingChange(state: PeerConnection.SignalingState?) {
@@ -162,10 +163,7 @@ class CallViewModel : ViewModel() {
                     Log.d("WebRTC", "ICE Connection State: $state")
                 }
 
-                override fun onIceConnectionReceivingChange(p0: Boolean) {
-
-                }
-
+                override fun onIceConnectionReceivingChange(p0: Boolean) {}
                 override fun onIceGatheringChange(state: PeerConnection.IceGatheringState?) {
                     Log.d("WebRTC", "ICE Gathering State: $state")
                 }
@@ -193,24 +191,23 @@ class CallViewModel : ViewModel() {
         mediaStream.addTrack(localVideoTrack)
         peerConnection.addStream(mediaStream)
 
-        Log.d("WebRTC", "Video capture started. LocalVideoTrack: ${localVideoTrack}, MediaStream: ${mediaStream}")
+        Log.d("WebRTC", "Video capture started. LocalVideoTrack: $localVideoTrack, MediaStream: $mediaStream")
     }
 
     private fun startCall() {
         peerConnection.createOffer(object : SdpObserver {
             override fun onCreateSuccess(sdp: SessionDescription?) {
-                Log.d("WebRTC", "Offer created: ${sdp?.description}")
                 peerConnection.setLocalDescription(object : SdpObserver {
                     override fun onCreateSuccess(p0: SessionDescription?) {}
                     override fun onSetSuccess() {
                         Log.d("WebRTC", "Local description set successfully")
+                        callRef.child("offer").setValue(sdp)
                     }
                     override fun onCreateFailure(p0: String?) {}
                     override fun onSetFailure(p0: String?) {
                         Log.e("WebRTC", "Failed to set local description: $p0")
                     }
                 }, sdp)
-                callRef.child("offer").setValue(sdp)
             }
 
             override fun onSetSuccess() {}
@@ -221,46 +218,75 @@ class CallViewModel : ViewModel() {
         }, createMediaConstraints())
     }
 
-    private fun answerCall() {
-        callRef.child("offer").get().addOnSuccessListener { snapshot ->
-            val offer = snapshot.getValue(SessionDescription::class.java)
-            Log.d("WebRTC", "Received offer: ${offer?.description}")
-            peerConnection.setRemoteDescription(object : SdpObserver {
-                override fun onCreateSuccess(p0: SessionDescription?) {}
-                override fun onSetSuccess() {
-                    Log.d("WebRTC", "Remote description set successfully")
-                }
-                override fun onCreateFailure(p0: String?) {}
-                override fun onSetFailure(p0: String?) {
-                    Log.e("WebRTC", "Failed to set remote description: $p0")
-                }
-            }, offer)
-
-            peerConnection.createAnswer(object : SdpObserver {
-                override fun onCreateSuccess(sdp: SessionDescription?) {
-                    Log.d("WebRTC", "Answer created: ${sdp?.description}")
-                    peerConnection.setLocalDescription(object : SdpObserver {
+    private fun listenForRemoteOffer() {
+        callRef.child("offer").addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val offer = snapshot.getValue(SessionDescription::class.java)
+                if (offer != null) {
+                    peerConnection.setRemoteDescription(object : SdpObserver {
                         override fun onCreateSuccess(p0: SessionDescription?) {}
                         override fun onSetSuccess() {
-                            Log.d("WebRTC", "Local description set successfully")
+                            Log.d("WebRTC", "Remote offer set successfully")
+                            answerCall()
                         }
                         override fun onCreateFailure(p0: String?) {}
                         override fun onSetFailure(p0: String?) {
-                            Log.e("WebRTC", "Failed to set local description: $p0")
+                            Log.e("WebRTC", "Failed to set remote description: $p0")
                         }
-                    }, sdp)
-                    callRef.child("answer").setValue(sdp)
+                    }, offer)
                 }
+            }
 
-                override fun onSetSuccess() {}
-                override fun onCreateFailure(error: String?) {
-                    Log.e("WebRTC", "Failed to create answer: $error")
-                }
-                override fun onSetFailure(error: String?) {}
-            }, createMediaConstraints())
-        }
+            override fun onCancelled(error: DatabaseError) {}
+        })
     }
 
+    private fun answerCall() {
+        peerConnection.createAnswer(object : SdpObserver {
+            override fun onCreateSuccess(sdp: SessionDescription?) {
+                peerConnection.setLocalDescription(object : SdpObserver {
+                    override fun onCreateSuccess(p0: SessionDescription?) {}
+                    override fun onSetSuccess() {
+                        Log.d("WebRTC", "Local description set successfully")
+                        callRef.child("answer").setValue(sdp)
+                    }
+                    override fun onCreateFailure(p0: String?) {}
+                    override fun onSetFailure(p0: String?) {
+                        Log.e("WebRTC", "Failed to set local description: $p0")
+                    }
+                }, sdp)
+            }
+
+            override fun onSetSuccess() {}
+            override fun onCreateFailure(error: String?) {
+                Log.e("WebRTC", "Failed to create answer: $error")
+            }
+            override fun onSetFailure(error: String?) {}
+        }, createMediaConstraints())
+    }
+
+    private fun createMediaConstraints(): MediaConstraints {
+        val constraints = MediaConstraints()
+        constraints.mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
+        constraints.mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
+        return constraints
+    }
+
+    private fun listenForIceCandidates() {
+        callRef.child("candidates").addChildEventListener(object : ChildEventListener {
+            override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
+                val candidate = snapshot.getValue(IceCandidate::class.java)
+                if (candidate != null) {
+                    peerConnection.addIceCandidate(candidate)
+                }
+            }
+
+            override fun onChildChanged(snapshot: DataSnapshot, previousChildName: String?) {}
+            override fun onChildRemoved(snapshot: DataSnapshot) {}
+            override fun onChildMoved(snapshot: DataSnapshot, previousChildName: String?) {}
+            override fun onCancelled(error: DatabaseError) {}
+        })
+    }
 
     private fun createCameraCapturer(enumerator: CameraEnumerator): VideoCapturer? {
         val deviceNames = enumerator.deviceNames
@@ -279,5 +305,8 @@ class CallViewModel : ViewModel() {
 
     fun endCall() {
         peerConnection.close()
+        localVideoView?.release()
+        remoteVideoView?.release()
+        videoCapturer.stopCapture()
     }
 }

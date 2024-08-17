@@ -3,6 +3,7 @@ package com.example.connectcircle
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -58,6 +59,10 @@ import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import org.jitsi.meet.sdk.JitsiMeet
+import org.jitsi.meet.sdk.JitsiMeetActivity
+import org.jitsi.meet.sdk.JitsiMeetConferenceOptions
+import java.net.URL
 
 
 class ChatActivity : ComponentActivity() {
@@ -118,7 +123,22 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String) {
         permissions = listOf(cameraPermission, recordAudioPermission)
     )
 
-    //title = { Text(text = "Chat", color = Color.Black) },
+    val serverUrl = URL("https://jitsi.unp.edu.ar")
+
+    try {
+
+        val defaultOptions = JitsiMeetConferenceOptions.Builder()
+            .setServerURL(serverUrl)
+            .setFeatureFlag("welcomepage.enabled", false)
+            .build()
+
+        JitsiMeet.setDefaultConferenceOptions(defaultOptions)
+
+
+    }catch (e : Exception){
+        e.printStackTrace()
+    }
+
 
     Scaffold(
         topBar = {
@@ -147,12 +167,9 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String) {
 
                         multiplePermissionsState.launchMultiplePermissionRequest()
                         if (multiplePermissionsState.allPermissionsGranted) {
-                            // Handle call button click
-                            context.startActivity(Intent(context, CallActivity::class.java).apply {
-                                putExtra("target", recipientId)
-                                putExtra("isVideoCall", false)
-                                putExtra("isCaller", true)
-                            })
+
+
+//                            .setAudioOnly(false)
                         }
 
                     }) {
@@ -166,12 +183,17 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String) {
 
                         multiplePermissionsState.launchMultiplePermissionRequest()
                         if (multiplePermissionsState.allPermissionsGranted) {
-                            // Handle video call button click
-                            context.startActivity(Intent(context, CallActivity::class.java).apply {
-                                putExtra("target", recipientId)
-                                putExtra("isVideoCall", true)
-                                putExtra("isCaller", true)
-                            })
+
+                            val options = JitsiMeetConferenceOptions.Builder()
+                                .setRoom("${Firebase.auth.currentUser?.uid}/$recipientId")
+                                .setFeatureFlag("invite.enabled",false)
+                                .setFeatureFlag("lobby-mode.enabled",false)
+                                .setFeatureFlag("prejoinpage.enabled",false)
+//                                .setFeatureFlag("tile-view.enabled",true)
+                                .setFeatureFlag("welcomepage.enabled", false)
+                                .build()
+
+                            JitsiMeetActivity.launch(context,options)
                         }
 
                     }) {
