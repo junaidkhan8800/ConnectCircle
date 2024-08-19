@@ -24,9 +24,10 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
             val fullName = remoteMessage.data["senderName"]
             val message = remoteMessage.data["message"]
+            val callType = remoteMessage.data["callType"]
 
             if (type == "video_call") {
-                showIncomingCallNotification(callerId, callId)
+                showIncomingCallNotification(callerId, callId,fullName,callType)
             }else if (type == "chat_message"){
                 showChatMessageNotification(fullName, message)
             }
@@ -54,7 +55,12 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
     }
 
-    private fun showIncomingCallNotification(callerId: String?, callId: String?) {
+    private fun showIncomingCallNotification(
+        callerId: String?,
+        callId: String?,
+        fullName: String?,
+        callType: String?
+    ) {
         val acceptIntent = Intent(this, CallActionReceiver::class.java).apply {
             action = "ACCEPT_CALL"
             putExtra("callId", callId)
@@ -73,8 +79,8 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
         val notification = NotificationCompat.Builder(this, "YOUR_CHANNEL_ID")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Incoming Video Call")
-            .setContentText("Caller is trying to reach you")
+            .setContentTitle("Incoming $callType Call")
+            .setContentText("$fullName is trying to reach you")
             .addAction(R.drawable.call_answer, "Accept", acceptPendingIntent)
             .addAction(R.drawable.call_end, "Reject", rejectPendingIntent)
             .setPriority(NotificationCompat.PRIORITY_HIGH)

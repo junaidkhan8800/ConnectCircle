@@ -2,7 +2,9 @@ package com.example.connectcircle
 
 import android.content.Context
 import android.os.Bundle
+import android.text.TextUtils
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -178,27 +180,26 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String, fcmToken: Strin
                 actions = {
                     IconButton(onClick = {
 
-//                        multiplePermissionsState.launchMultiplePermissionRequest()
-//                        if (multiplePermissionsState.allPermissionsGranted) {
-//
-//                            val options = JitsiMeetConferenceOptions.Builder()
-//                                .setRoom("${Firebase.auth.currentUser?.uid}/$recipientId")
-//                                .setFeatureFlag("invite.enabled", false)
-//                                .setFeatureFlag("lobby-mode.enabled", false)
-//                                .setFeatureFlag("prejoinpage.enabled", false)
-////                                .setFeatureFlag("tile-view.enabled",true)
-//                                .setAudioOnly(true)
-//                                .setFeatureFlag("welcomepage.enabled", false)
-//                                .build()
-//
-//                            JitsiMeetActivity.launch(context, options)
-//
-//                            CoroutineScope(Dispatchers.IO).launch {
-//                                sendCallNotification(recipientId, fcmToken, context)
-//                            }
-//
-////
-//                        }
+                        multiplePermissionsState.launchMultiplePermissionRequest()
+                        if (multiplePermissionsState.allPermissionsGranted) {
+
+                            val options = JitsiMeetConferenceOptions.Builder()
+                                .setRoom("${Firebase.auth.currentUser?.uid}/$recipientId")
+                                .setFeatureFlag("invite.enabled", false)
+                                .setFeatureFlag("lobby-mode.enabled", false)
+                                .setFeatureFlag("prejoinpage.enabled", false)
+//                                .setFeatureFlag("tile-view.enabled",true)
+                                .setAudioOnly(true)
+                                .setFeatureFlag("welcomepage.enabled", false)
+                                .build()
+
+                            JitsiMeetActivity.launch(context, options)
+
+                            CoroutineScope(Dispatchers.IO).launch {
+                                sendCallNotification(recipientId, fcmToken, context,userId,"Audio")
+                            }
+
+                        }
 
                     }) {
                         Icon(
@@ -224,7 +225,7 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String, fcmToken: Strin
                             JitsiMeetActivity.launch(context, options)
 
                             CoroutineScope(Dispatchers.IO).launch {
-                                sendCallNotification(recipientId, fcmToken, context)
+                                sendCallNotification(recipientId, fcmToken, context,userId, "Video")
                             }
 
                         }
@@ -299,13 +300,13 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String, fcmToken: Strin
                     ),
                     onClick = {
 
-//                        CoroutineScope(Dispatchers.Default).launch {
-                            chatViewModel.addMessage()
-//                        }
+                        if (TextUtils.isEmpty(message)){
+                            Toast.makeText(context, "Cannot send empty message", Toast.LENGTH_SHORT).show()
+                        }else{
 
-//                        CoroutineScope(Dispatchers.IO).launch {
-//                            sendChatNotification(fcmToken, message, userId, context)
-//                        }
+                            chatViewModel.addMessage(context, fcmToken, userId)
+                        }
+
                     }
                 ) {
                     Icon(
@@ -319,58 +320,8 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String, fcmToken: Strin
     }
 }
 
-fun sendChatNotification(fcmToken: String, message: String, fullName: String, context: Context) {
 
-    if (fullName.isEmpty()) {
-        Log.w("ChatNotification", "Full Name is empty")
-        return
-    }
-
-    // Construct the notification payload
-    val payload = JSONObject().apply {
-        put("message", JSONObject().apply {
-            put("token", fcmToken)
-            put("data", JSONObject().apply {
-                put("type", "chat_message")
-                put("senderName", fullName)
-                put("message", message)
-            })
-            put("android", JSONObject().apply {
-                put("priority", "high")
-            })
-        })
-    }
-
-    // Send the notification
-    val client = OkHttpClient()
-    val requestBody = RequestBody.create(
-        "application/json; charset=utf-8".toMediaTypeOrNull(),
-        payload.toString()
-    )
-    val request = Request.Builder()
-        .url("https://fcm.googleapis.com/v1/projects/connect-circle-23dca/messages:send")  // Update with your FCM URL
-        .post(requestBody)
-        .addHeader("Authorization", "Bearer " + getServiceAccountAccessToken(context))  // Replace with your server key
-        .addHeader("Content-Type", "application/json")
-        .build()
-
-    client.newCall(request).enqueue(object : okhttp3.Callback {
-        override fun onFailure(call: okhttp3.Call, e: IOException) {
-            Log.e("ChatNotification", "Failed to send notification: ", e)
-        }
-
-        override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
-            if (!response.isSuccessful) {
-                Log.e("ChatNotification", "Error sending notification: ${response.message}")
-            } else {
-                Log.d("ChatNotification", "Notification sent successfully.")
-            }
-        }
-    })
-
-}
-
-fun sendCallNotification(recipientId: String, fcmToken: String, context: Context) {
+fun sendCallNotification(recipientId: String, fcmToken: String, context: Context,userId: String, callType : String) {
 
     if (fcmToken.isEmpty()) {
         Log.w("CallNotification", "FCM token is empty")
@@ -383,6 +334,8 @@ fun sendCallNotification(recipientId: String, fcmToken: String, context: Context
             put("token", fcmToken)
             put("data", JSONObject().apply {
                 put("type", "video_call")
+                put("senderName", userId)
+                put("callType", callType)
                 put("callerId", FirebaseAuth.getInstance().currentUser?.uid ?: "")
                 put("callId", "${Firebase.auth.currentUser?.uid}/$recipientId")  // Unique identifier for the call
             })

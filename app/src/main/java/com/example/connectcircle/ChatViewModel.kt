@@ -1,12 +1,24 @@
 package com.example.connectcircle
 
+import android.content.Context
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.connectcircle.utils.Constants
+import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
+import org.json.JSONObject
+import java.io.IOException
 
 class ChatViewModel : ViewModel() {
 
@@ -50,7 +62,7 @@ class ChatViewModel : ViewModel() {
     /**
      * Send a message
      */
-    fun addMessage() {
+    fun addMessage(context: Context, fcmToken: String, userId: String) {
         val message: String = _message.value ?: throw IllegalArgumentException("Message is empty")
         val recipientId =
             _recipientId.value ?: throw IllegalStateException("Recipient ID is not set")
@@ -67,9 +79,82 @@ class ChatViewModel : ViewModel() {
                     )
                 ).addOnSuccessListener {
                     _message.value = ""
+
+                    CoroutineScope(Dispatchers.IO).launch {
+                        sendChatNotification(fcmToken, message, userId, context)
+                    }
+
+                }.addOnFailureListener { exception ->
+                    // Handle the error if needed
+                    Log.e("Chat", "Failed to send message: ", exception)
                 }
         }
     }
+
+    private fun sendChatNotification(fcmToken: String, message: String, userId: String, context: Context) {
+
+        if (userId.isEmpty()) {
+            Log.w("ChatNotification", "Full Name is empty")
+            return
+        }
+
+        // Construct the notification payload
+        val payload = JSONObject().apply {
+            put("message", JSONObject().apply {
+                put("token", fcmToken)
+                put("data", JSONObject().apply {
+                    put("type", "chat_message")
+                    put("senderName", userId)
+                    put("message", message)
+                })
+                put("android", JSONObject().apply {
+                    put("priority", "high")
+                })
+            })
+        }
+
+        // Send the notification
+        val client = OkHttpClient()
+        val requestBody = RequestBody.create(
+            "application/json; charset=utf-8".toMediaTypeOrNull(),
+            payload.toString()
+        )
+        val request = Request.Builder()
+            .url("https://fcm.googleapis.com/v1/projects/connect-circle-23dca/messages:send")  // Update with your FCM URL
+            .post(requestBody)
+            .addHeader("Authorization", "Bearer " + getServiceAccountAccessToken(context))  // Replace with your server key
+            .addHeader("Content-Type", "application/json")
+            .build()
+
+        client.newCall(request).enqueue(object : okhttp3.Callback {
+            override fun onFailure(call: okhttp3.Call, e: IOException) {
+                Log.e("ChatNotification", "Failed to send notification: ", e)
+            }
+
+            override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+                if (!response.isSuccessful) {
+                    Log.e("ChatNotification", "Error sending notification: ${response.message}")
+                } else {
+                    Log.d("ChatNotification", "Notification sent successfully.")
+                }
+            }
+        })
+
+    }
+
+    @Throws(IOException::class)
+    fun getServiceAccountAccessToken(context: Context): String {
+
+        val serviceAccount = context.resources.openRawResource(R.raw.service_account_key)
+
+        val credentials = GoogleCredentials.fromStream(serviceAccount)
+            .createScoped("https://www.googleapis.com/auth/firebase.messaging")
+
+        credentials.refresh()
+        return credentials.accessToken.tokenValue
+
+    }
+
 
     /**
      * Get the messages

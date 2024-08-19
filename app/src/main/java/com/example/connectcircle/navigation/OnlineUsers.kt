@@ -1,6 +1,10 @@
 package com.example.connectcircle.navigation
 
+import android.content.Context
+import android.content.Intent
+import android.util.Log
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -25,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -32,12 +37,19 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
+import com.example.connectcircle.ChatActivity
 import com.example.connectcircle.R
 import com.example.connectcircle.models.UsersModels
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OnlineUsers(usersList: SnapshotStateList<UsersModels>, userDocumentId: String) {
+fun OnlineUsers(
+    usersList: SnapshotStateList<UsersModels>,
+    userDocumentId: String,
+    userData: UsersModels
+) {
+
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -78,10 +90,14 @@ fun OnlineUsers(usersList: SnapshotStateList<UsersModels>, userDocumentId: Strin
 
                     items(usersList.size) { users ->
                         ListUi(
+                            context,
+                            usersList[users].id,
                             usersList[users].profilePicture,
                             usersList[users].fullName,
                             usersList[users].areaOfInterest,
-                            usersList[users].isOnline
+                            usersList[users].isOnline,
+                            usersList[users].fcmToken,
+                            userData
                         )
                     }
                 }
@@ -107,11 +123,35 @@ fun OnlineUsers(usersList: SnapshotStateList<UsersModels>, userDocumentId: Strin
 
 
 @Composable
-fun ListUi(profilePicture: String, fullName: String, areaOfInterest: String, online: Any?) {
+fun ListUi(
+    context : Context,
+    userId: String,
+    profilePicture: String,
+    fullName: String,
+    areaOfInterest: String,
+    online: Any?,
+    fcmToken: String,
+    userData: UsersModels
+) {
 
     Card(
         Modifier
-            .padding(16.dp),
+            .padding(16.dp)
+            .clickable {
+
+                Log.e("ListUI", "ListUI: ${userData.fullName}")
+
+                val intent = Intent(context, ChatActivity::class.java)
+
+                intent.putExtra("recipientId", userId)
+                intent.putExtra("fullName", fullName)
+                intent.putExtra("profilePicture", profilePicture)
+                intent.putExtra("fcmToken", fcmToken)
+                intent.putExtra("senderName", userData.fullName)
+
+                context.startActivity(intent)
+
+            },
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
 

@@ -68,6 +68,10 @@
             android:exported="true"
             android:theme="@style/Theme.ConnectCircle"/>
 
+        <activity android:name="com.example.connectcircle.ForgotPasswordActivity"
+            android:exported="true"
+            android:theme="@style/Theme.ConnectCircle"/>
+
         <receiver android:name=".utils.CallActionReceiver" />
 
         <service

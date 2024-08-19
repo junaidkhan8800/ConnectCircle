@@ -144,18 +144,23 @@ class HomeActivity : ComponentActivity() {
                             withContext(Dispatchers.Main) {
                                 for (document in filteredDocuments) {
                                     Log.d("TAG", "${document.id} => ${document.data}")
-                                    usersList.add(
-                                        UsersModels(
-                                            document.id,
-                                            document.get("fullName").toString(),
-                                            document.get("mobileNumber").toString(),
-                                            document.get("email").toString(),
-                                            document.get("areaOfInterest").toString(),
-                                            document.get("profilePicture").toString(),
-                                            document.get("isOnline"),
-                                            document.get("fcmToken").toString()
+
+                                    if (document.id != mAuth.currentUser?.uid && document.get("isOnline") == true){
+
+                                        usersList.add(
+                                            UsersModels(
+                                                document.id,
+                                                document.get("fullName").toString(),
+                                                document.get("mobileNumber").toString(),
+                                                document.get("email").toString(),
+                                                document.get("areaOfInterest").toString(),
+                                                document.get("profilePicture").toString(),
+                                                document.get("isOnline"),
+                                                document.get("fcmToken").toString()
+                                            )
                                         )
-                                    )
+
+                                    }
                                 }
 
                             }
@@ -196,7 +201,7 @@ fun NavHostContainer(
                 HomeScreen(userDocumentId,userData)
             }
             composable("online") {
-                OnlineUsers(userList,userDocumentId)
+                OnlineUsers(userList,userDocumentId, userData)
             }
             composable("profile") {
                 ProfileScreen(userData)

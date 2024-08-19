@@ -23,6 +23,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -47,6 +48,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.rememberAsyncImagePainter
+import com.example.connectcircle.ForgotPasswordActivity
 import com.example.connectcircle.LoginActivity
 import com.example.connectcircle.R
 import com.example.connectcircle.UpdateProfileActivity
@@ -98,7 +100,7 @@ fun ProfileScreen(userData: UsersModels) {
                 ProfileHeader(user = userData)
                 Spacer(modifier = Modifier.height(16.dp))
                 ProfileDetails(user = userData)
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 TextButton(onClick = {
                     context.startActivity(
@@ -115,14 +117,26 @@ fun ProfileScreen(userData: UsersModels) {
                     )
                 }
 
+                Spacer(modifier = Modifier.height(12.dp))
 
-                Spacer(modifier = Modifier.height(24.dp))
+                TextButton(onClick = {
+
+                    context.startActivity(Intent(context, ForgotPasswordActivity::class.java))
+
+                }) {
+                    Text(text = "Change Password",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontSize = 16.sp)
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
 
                 TextButton(onClick = { openDialog = true }) {
                     Text(text = "Log Out",
                         color = Color.Red,
                         fontSize = 16.sp)
                 }
+                Spacer(modifier = Modifier.height(12.dp))
 
 
                 if (openDialog) {
@@ -205,7 +219,7 @@ fun ProfileDetails(user: UsersModels) {
                 .fillMaxWidth()
         ) {
             ProfileDetailItem(label = "Mobile Number", value = user.mobileNumber)
-            Divider(modifier = Modifier.padding(vertical = 8.dp))
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             ProfileDetailItem(label = "Area Of Interest", value = user.areaOfInterest)
         }
     }

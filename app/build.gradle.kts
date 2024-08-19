@@ -108,9 +108,11 @@ dependencies {
     implementation("com.google.firebase:firebase-messaging")
     implementation("com.google.firebase:firebase-functions-ktx")
 
-    implementation("io.grpc:grpc-okhttp:1.57.2")
-    implementation("io.grpc:grpc-protobuf-lite:1.57.2")
-    implementation("io.grpc:grpc-stub:1.57.2")
+    implementation("io.grpc:grpc-okhttp:1.66.0")
+    // https://mvnrepository.com/artifact/io.grpc/grpc-protobuf-lite
+    implementation("io.grpc:grpc-protobuf-lite:1.66.0")
+
+    implementation("io.grpc:grpc-stub:1.66.0")
 
 
 }

@@ -209,7 +209,10 @@ fun LoginActivityUI(context: Context) {
 
                         Text(
                             text = "Forgot Password?",
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier.padding(16.dp)
+                                .clickable {
+                                    context.startActivity(Intent(context, ForgotPasswordActivity::class.java))
+                                },
                             fontSize = 16.sp,
                             color = MaterialTheme.colorScheme.primary
                         )

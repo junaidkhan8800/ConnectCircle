@@ -55,6 +55,7 @@ import com.example.connectcircle.ChatActivity
 import com.example.connectcircle.R
 import com.example.connectcircle.models.UsersModels
 import com.example.connectcircle.utils.Constants.Companion.capitalizeWords
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
 import kotlinx.coroutines.CoroutineScope
@@ -140,18 +141,24 @@ fun HomeScreen(userDocumentId: String, userData: UsersModels) {
                                                 withContext(Dispatchers.Main) {
                                                     for (document in filteredDocuments) {
                                                         Log.d("TAG", "${document.id} => ${document.data}")
-                                                        usersList.add(
-                                                            UsersModels(
-                                                                document.id,
-                                                                document.get("fullName").toString(),
-                                                                document.get("mobileNumber").toString(),
-                                                                document.get("email").toString(),
-                                                                document.get("areaOfInterest").toString(),
-                                                                document.get("profilePicture").toString(),
-                                                                document.get("isOnline"),
-                                                                document.get("fcmToken").toString()
+
+                                                        if (document.id != FirebaseAuth.getInstance().currentUser?.uid){
+
+                                                            usersList.add(
+                                                                UsersModels(
+                                                                    document.id,
+                                                                    document.get("fullName").toString(),
+                                                                    document.get("mobileNumber").toString(),
+                                                                    document.get("email").toString(),
+                                                                    document.get("areaOfInterest").toString(),
+                                                                    document.get("profilePicture").toString(),
+                                                                    document.get("isOnline"),
+                                                                    document.get("fcmToken").toString()
+                                                                )
                                                             )
-                                                        )
+
+                                                        }
+
                                                     }
 
                                                     listVisible = usersList.isNotEmpty()
