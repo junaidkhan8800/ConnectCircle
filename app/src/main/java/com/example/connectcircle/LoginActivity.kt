@@ -3,8 +3,11 @@ package com.example.connectcircle
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.text.TextUtils
+import android.util.Log
 import android.util.Patterns
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -55,10 +58,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.example.connectcircle.ui.theme.ConnectCircleTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.messaging.FirebaseMessaging
+import android.Manifest
+
 
 class LoginActivity : ComponentActivity() {
 
@@ -81,9 +89,29 @@ class LoginActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+
+
+                    // Check and request notification permission
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        if (ContextCompat.checkSelfPermission(
+                                this,
+                                Manifest.permission.POST_NOTIFICATIONS
+                            ) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            requestNotificationPermission()
+                        }
+                    }
+
+
                     LoginActivityUI(this)
                 }
             }
+        }
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 100)
         }
     }
 }
@@ -219,6 +247,8 @@ fun LoginActivityUI(context: Context) {
 
                                                 isLoading = false
 
+                                                updateDeviceTokenOnLogin()
+
                                                 context.startActivity(
                                                     Intent(
                                                         context,
@@ -291,6 +321,40 @@ fun LoginActivityUI(context: Context) {
             }
         }
     }
+}
+
+fun updateDeviceTokenOnLogin() {
+    // Get the current user ID
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
+
+    if (userId != null) {
+        // Retrieve the current FCM token
+        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w("FCM", "Fetching FCM registration token failed", task.exception)
+                return@addOnCompleteListener
+            }
+
+            // Get new FCM registration token
+            val token = task.result
+
+            // Update Firestore with the new token
+            saveTokenToFirestore(userId, token)
+        }
+    } else {
+        Log.w("FCM", "User not logged in")
+    }
+}
+
+fun saveTokenToFirestore(userId: String, token: String) {
+    val db = FirebaseFirestore.getInstance()
+    val userRef = db.collection("users").document(userId)
+
+    val userFcmToken = mapOf("fcmToken" to token)
+
+    userRef.set(userFcmToken, SetOptions.merge())
+        .addOnSuccessListener { Log.e("FCMTOKEN", "Success") }
+        .addOnFailureListener { e -> Log.e("FCMTOKEN", "Failure", e) }
 }
 
 @Preview(showBackground = true, showSystemUi = true)

@@ -1,11 +1,17 @@
 package com.example.connectcircle.utils
 
+import android.provider.Settings.Global.getString
+import android.util.Log
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
+import com.example.connectcircle.R
 import com.example.connectcircle.models.BottomNavItem
+import com.google.android.gms.tasks.OnCompleteListener
+import com.google.firebase.messaging.FirebaseMessaging
 import com.permissionx.guolindev.PermissionX
 
 class Constants {
@@ -43,9 +49,6 @@ class Constants {
             BottomNavItem(label = "Profile", icon = Icons.Filled.Person, route = "profile")
 
         )
-
-
-
 
     }
 

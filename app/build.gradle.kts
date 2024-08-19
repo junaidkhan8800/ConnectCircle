@@ -50,12 +50,15 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    packagingOptions {
+        resources.excludes.add("META-INF/*")
+    }
 }
 
 dependencies {
 
     implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.4")
     implementation("androidx.activity:activity-compose:1.9.0")
     implementation(platform("androidx.compose:compose-bom:2023.08.00"))
     implementation("androidx.compose.ui:ui")
@@ -65,6 +68,7 @@ dependencies {
     implementation("com.google.firebase:firebase-database:21.0.0")
     implementation("com.google.firebase:firebase-storage:21.0.0")
     implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("com.google.firebase:firebase-functions-ktx:21.0.0")
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
@@ -92,9 +96,6 @@ dependencies {
     //Material Icons
     implementation("androidx.compose.material:material-icons-extended:1.6.8")
 
-    //Agora SDK
-    implementation("io.agora.rtc:full-sdk:4.4.1")
-
     implementation("androidx.compose.runtime:runtime-livedata:1.6.8")
 
     implementation("com.guolindev.permissionx:permissionx:1.7.1")
@@ -102,5 +103,11 @@ dependencies {
     implementation("com.google.accompanist:accompanist-permissions:0.31.0-alpha") // Accompanist Permissions
 
     implementation("org.jitsi.react:jitsi-meet-sdk:10.0.1")
+
+    implementation("com.google.firebase:firebase-messaging:24.0.0")
+
+    // https://mvnrepository.com/artifact/com.google.auth/google-auth-library-oauth2-http
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.24.1")
+    
 
 }

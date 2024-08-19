@@ -1,7 +1,6 @@
 package com.example.connectcircle
 
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -56,12 +55,22 @@ import com.example.connectcircle.ui.theme.ConnectCircleTheme
 import com.example.connectcircle.utils.Constants
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody
 import org.jitsi.meet.sdk.JitsiMeet
 import org.jitsi.meet.sdk.JitsiMeetActivity
 import org.jitsi.meet.sdk.JitsiMeetConferenceOptions
+import org.json.JSONObject
+import java.io.IOException
 import java.net.URL
 
 
@@ -76,7 +85,8 @@ class ChatActivity : ComponentActivity() {
             ConnectCircleTheme {
 
                 val userId =
-                    mAuth.currentUser?.uid ?: throw IllegalStateException("User not authenticated")
+                    intent.getStringExtra("senderName") ?: throw IllegalStateException("Sender Name is missing")
+
                 val recipientId = intent.getStringExtra("recipientId")
                     ?: throw IllegalArgumentException("Recipient ID is missing")
 
@@ -85,6 +95,9 @@ class ChatActivity : ComponentActivity() {
 
                 val profilePicture = intent.getStringExtra("profilePicture")
                     ?: throw IllegalArgumentException("Profile Picture is missing")
+
+                val fcmToken = intent.getStringExtra("fcmToken")
+                    ?: throw IllegalArgumentException("FCMToken is missing")
 
 
                 // Initialize ChatViewModel
@@ -95,7 +108,7 @@ class ChatActivity : ComponentActivity() {
                 chatViewModel.setFullName(fullName)
                 chatViewModel.setProfilePicture(profilePicture)
 
-                ChatAppUI(chatViewModel,recipientId)
+                ChatAppUI(chatViewModel, recipientId, fcmToken,userId)
 
             }
         }
@@ -105,7 +118,7 @@ class ChatActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
-fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String) {
+fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String, fcmToken: String, userId: String) {
 
     val message: String by chatViewModel.message.observeAsState("")
     val messages: List<Map<String, Any>> by chatViewModel.messages.observeAsState(emptyList())
@@ -135,7 +148,7 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String) {
         JitsiMeet.setDefaultConferenceOptions(defaultOptions)
 
 
-    }catch (e : Exception){
+    } catch (e: Exception) {
         e.printStackTrace()
     }
 
@@ -186,14 +199,19 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String) {
 
                             val options = JitsiMeetConferenceOptions.Builder()
                                 .setRoom("${Firebase.auth.currentUser?.uid}/$recipientId")
-                                .setFeatureFlag("invite.enabled",false)
-                                .setFeatureFlag("lobby-mode.enabled",false)
-                                .setFeatureFlag("prejoinpage.enabled",false)
+                                .setFeatureFlag("invite.enabled", false)
+                                .setFeatureFlag("lobby-mode.enabled", false)
+                                .setFeatureFlag("prejoinpage.enabled", false)
 //                                .setFeatureFlag("tile-view.enabled",true)
                                 .setFeatureFlag("welcomepage.enabled", false)
                                 .build()
 
-                            JitsiMeetActivity.launch(context,options)
+                            JitsiMeetActivity.launch(context, options)
+
+                            CoroutineScope(Dispatchers.IO).launch {
+                                sendCallNotification(recipientId, fcmToken, context)
+                            }
+
                         }
 
                     }) {
@@ -265,7 +283,14 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String) {
                         containerColor = MaterialTheme.colorScheme.primary
                     ),
                     onClick = {
-                        chatViewModel.addMessage()
+
+                        CoroutineScope(Dispatchers.Default).launch {
+                            chatViewModel.addMessage()
+                        }
+
+                        CoroutineScope(Dispatchers.IO).launch {
+                            sendChatNotification(fcmToken, message, userId, context)
+                        }
                     }
                 ) {
                     Icon(
@@ -279,6 +304,120 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String) {
     }
 }
 
+fun sendChatNotification(fcmToken: String, message: String, fullName: String, context: Context) {
+
+    if (fullName.isEmpty()) {
+        Log.w("ChatNotification", "Full Name is empty")
+        return
+    }
+
+    // Construct the notification payload
+    val payload = JSONObject().apply {
+        put("message", JSONObject().apply {
+            put("token", fcmToken)
+            put("data", JSONObject().apply {
+                put("type", "chat_message")
+                put("senderName", fullName)
+                put("message", message)
+            })
+            put("android", JSONObject().apply {
+                put("priority", "high")
+            })
+        })
+    }
+
+    // Send the notification
+    val client = OkHttpClient()
+    val requestBody = RequestBody.create(
+        "application/json; charset=utf-8".toMediaTypeOrNull(),
+        payload.toString()
+    )
+    val request = Request.Builder()
+        .url("https://fcm.googleapis.com/v1/projects/connect-circle-23dca/messages:send")  // Update with your FCM URL
+        .post(requestBody)
+        .addHeader("Authorization", "Bearer " + getServiceAccountAccessToken(context))  // Replace with your server key
+        .addHeader("Content-Type", "application/json")
+        .build()
+
+    client.newCall(request).enqueue(object : okhttp3.Callback {
+        override fun onFailure(call: okhttp3.Call, e: IOException) {
+            Log.e("ChatNotification", "Failed to send notification: ", e)
+        }
+
+        override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+            if (!response.isSuccessful) {
+                Log.e("ChatNotification", "Error sending notification: ${response.message}")
+            } else {
+                Log.d("ChatNotification", "Notification sent successfully.")
+            }
+        }
+    })
+
+}
+
+fun sendCallNotification(recipientId: String, fcmToken: String, context: Context) {
+
+    if (fcmToken.isEmpty()) {
+        Log.w("CallNotification", "FCM token is empty")
+        return
+    }
+
+    // Construct the notification payload
+    val payload = JSONObject().apply {
+        put("message", JSONObject().apply {
+            put("token", fcmToken)
+            put("data", JSONObject().apply {
+                put("type", "video_call")
+                put("callerId", FirebaseAuth.getInstance().currentUser?.uid ?: "")
+                put("callId", "${Firebase.auth.currentUser?.uid}/$recipientId")  // Unique identifier for the call
+            })
+            put("android", JSONObject().apply {
+                put("priority", "high")
+            })
+        })
+    }
+
+    // Send the notification
+    val client = OkHttpClient()
+    val requestBody = RequestBody.create(
+        "application/json; charset=utf-8".toMediaTypeOrNull(),
+        payload.toString()
+    )
+    val request = Request.Builder()
+        .url("https://fcm.googleapis.com/v1/projects/connect-circle-23dca/messages:send") //connect-circle-23dca
+        .post(requestBody)
+        .addHeader("Authorization", "Bearer " + getServiceAccountAccessToken(context))  // Replace with your server key
+        .addHeader("Content-Type", "application/json")
+        .build()
+
+    client.newCall(request).enqueue(object : okhttp3.Callback {
+        override fun onFailure(call: okhttp3.Call, e: IOException) {
+            Log.e("CallNotification", "Failed to send notification: ", e)
+        }
+
+        override fun onResponse(call: okhttp3.Call, response: okhttp3.Response) {
+            if (!response.isSuccessful) {
+                Log.e("CallNotification", "Error sending notification: ${response.message}")
+            } else {
+                Log.d("CallNotification", "Notification sent successfully.")
+            }
+        }
+    })
+
+}
+
+@Throws(IOException::class)
+fun getServiceAccountAccessToken(context: Context): String {
+
+    val serviceAccount = context.resources.openRawResource(R.raw.service_account_key)
+
+    val credentials = GoogleCredentials.fromStream(serviceAccount)
+        .createScoped("https://www.googleapis.com/auth/firebase.messaging")
+
+    credentials.refresh()
+    return credentials.accessToken.tokenValue
+
+}
 
 
 @Composable
@@ -316,6 +455,6 @@ private fun ChatPrev() {
     // Initialize ChatViewModel
     val chatViewModel: ChatViewModel = viewModel()
 
-    ChatAppUI(chatViewModel, "recipientId")
+    ChatAppUI(chatViewModel, "recipientId", "fcmToken", "userId")
 
 }

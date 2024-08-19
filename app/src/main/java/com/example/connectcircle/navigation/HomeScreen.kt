@@ -57,10 +57,14 @@ import com.example.connectcircle.models.UsersModels
 import com.example.connectcircle.utils.Constants.Companion.capitalizeWords
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(userDocumentId: String) {
+fun HomeScreen(userDocumentId: String, fullName: String) {
 
     var search by remember { mutableStateOf("") }
     var listVisible by remember { mutableStateOf(false) }
@@ -119,48 +123,53 @@ fun HomeScreen(userDocumentId: String) {
                                 FirebaseFirestoreSettings.Builder().build()
 
 
-                            mFirestore
-                                .collection("users")
-                                .whereEqualTo("areaOfInterest", search.capitalizeWords().trim())
+                            mFirestore.collection("users")
                                 .get()
                                 .addOnSuccessListener { documents ->
-                                    try {
-                                        if (documents != null) {
-                                            usersList.clear()
-                                            for (document in documents) {
-                                                Log.d("TAG", "${document.id} => ${document.data}")
+                                    CoroutineScope(Dispatchers.Default).launch {
+                                        try {
+                                            if (documents != null) {
+                                                usersList.clear()
 
-                                                usersList.add(
-                                                    UsersModels(
-                                                        document.id,
-                                                        document.get("fullName").toString(),
-                                                        document.get("mobileNumber").toString(),
-                                                        document.get("email").toString(),
-                                                        document.get("areaOfInterest").toString(),
-                                                        document.get("profilePicture").toString(),
-                                                        document.get("isOnline")
-                                                    )
-                                                )
+                                                // In-memory filtering
+                                                val filteredDocuments = documents.filter { document ->
+                                                    val areaOfInterest = document.getString("areaOfInterest") ?: ""
+                                                    areaOfInterest.contains(search.capitalizeWords().trim(), ignoreCase = true)
+                                                }
+
+                                                withContext(Dispatchers.Main) {
+                                                    for (document in filteredDocuments) {
+                                                        Log.d("TAG", "${document.id} => ${document.data}")
+                                                        usersList.add(
+                                                            UsersModels(
+                                                                document.id,
+                                                                document.get("fullName").toString(),
+                                                                document.get("mobileNumber").toString(),
+                                                                document.get("email").toString(),
+                                                                document.get("areaOfInterest").toString(),
+                                                                document.get("profilePicture").toString(),
+                                                                document.get("isOnline"),
+                                                                document.get("fcmToken").toString()
+                                                            )
+                                                        )
+                                                    }
+
+                                                    listVisible = usersList.isNotEmpty()
+                                                }
+                                            } else {
+                                                withContext(Dispatchers.Main){
+                                                    Toast.makeText(context, "No such Users", Toast.LENGTH_LONG).show()
+                                                }
+
                                             }
-
-                                            listVisible = usersList.isNotEmpty()
-
-//                    Toast.makeText(context, "DocumentSnapshot read successfully!", Toast.LENGTH_LONG).show()
-                                        } else {
-                                            Toast.makeText(
-                                                context,
-                                                "No such Users",
-                                                Toast.LENGTH_LONG
-                                            )
-                                                .show()
+                                        } catch (ex: Exception) {
+                                            ex.message?.let { Log.e("TAG", it) }
                                         }
-                                    } catch (ex: Exception) {
-                                        ex.message?.let { Log.e("TAG", it) }
                                     }
-                                }.addOnFailureListener { e ->
+                                }
+                                .addOnFailureListener { e ->
                                     Log.e("TAG", "Error writing document", e)
                                 }
-
                         }
                     ),
                     trailingIcon = {
@@ -199,7 +208,9 @@ fun HomeScreen(userDocumentId: String) {
                                 usersList[users].profilePicture,
                                 usersList[users].fullName,
                                 usersList[users].areaOfInterest,
-                                usersList[users].isOnline
+                                usersList[users].isOnline,
+                                usersList[users].fcmToken,
+                                fullName
                             )
                         }
                     }
@@ -221,7 +232,9 @@ fun ListUI(
     profilePicture: String,
     fullName: String,
     areaOfInterest: String,
-    online: Any?
+    online: Any?,
+    fcmToken: String,
+    senderName: String
 ) {
 
     Card(
@@ -229,10 +242,16 @@ fun ListUI(
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clickable {
 
+
+//                Log.e("ListUI", "ListUI: $fcmToken")
+
                 val intent = Intent(context, ChatActivity::class.java)
+
                 intent.putExtra("recipientId", userId)
                 intent.putExtra("fullName", fullName)
                 intent.putExtra("profilePicture", profilePicture)
+                intent.putExtra("fcmToken", fcmToken)
+                intent.putExtra("senderName", senderName)
 
                 context.startActivity(intent)
 
@@ -287,5 +306,5 @@ fun ListUI(
 @Preview
 @Composable
 fun HomePrev() {
-    HomeScreen("userDocumentId")
+    HomeScreen("userDocumentId", "userData.fullName")
 }

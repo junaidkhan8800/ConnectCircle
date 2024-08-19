@@ -52,7 +52,8 @@ class ChatViewModel : ViewModel() {
      */
     fun addMessage() {
         val message: String = _message.value ?: throw IllegalArgumentException("Message is empty")
-        val recipientId = _recipientId.value ?: throw IllegalStateException("Recipient ID is not set")
+        val recipientId =
+            _recipientId.value ?: throw IllegalStateException("Recipient ID is not set")
 
         if (message.isNotEmpty()) {
             val chatId = getChatId(currentUserId, recipientId)
@@ -90,7 +91,8 @@ class ChatViewModel : ViewModel() {
                 if (value != null) {
                     for (doc in value) {
                         val data = doc.data
-                        data[Constants.IS_CURRENT_USER] = currentUserId == data[Constants.SENT_BY].toString()
+                        data[Constants.IS_CURRENT_USER] =
+                            currentUserId == data[Constants.SENT_BY].toString()
                         list.add(data)
                     }
                 }
@@ -120,4 +122,5 @@ class ChatViewModel : ViewModel() {
             throw IllegalArgumentException("User IDs cannot be empty")
         }
     }
+
 }

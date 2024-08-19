@@ -1,6 +1,5 @@
 package com.example.connectcircle
 
-import android.app.Application
 import android.os.Bundle
 import android.util.Log
 import android.widget.Toast
@@ -31,9 +30,14 @@ import com.example.connectcircle.navigation.OnlineUsers
 import com.example.connectcircle.navigation.ProfileScreen
 import com.example.connectcircle.ui.theme.ConnectCircleTheme
 import com.example.connectcircle.utils.Constants
+import com.example.connectcircle.utils.Constants.Companion.capitalizeWords
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreSettings
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class HomeActivity : ComponentActivity() {
 
@@ -123,45 +127,52 @@ class HomeActivity : ComponentActivity() {
 
     private fun getOnlineUsers(areaOfInterest: String) {
 
-        mFirestore
-            .collection("users")
-            .whereEqualTo("areaOfInterest", areaOfInterest)
+        mFirestore.collection("users")
             .get()
             .addOnSuccessListener { documents ->
-                try {
-                    if (documents != null) {
-                        usersList.clear()
-                        for (document in documents) {
-                            Log.d("TAG", "${document.id} => ${document.data}")
+                CoroutineScope(Dispatchers.Default).launch {
+                    try {
+                        if (documents != null) {
+                            usersList.clear()
 
-                            if (document.get("isOnline") == true){
-
-                                usersList.add(
-                                    UsersModels(
-                                        document.id,
-                                        document.get("fullName").toString(),
-                                        document.get("mobileNumber").toString(),
-                                        document.get("email").toString(),
-                                        document.get("areaOfInterest").toString(),
-                                        document.get("profilePicture").toString(),
-                                        document.get("isOnline")
-                                    )
-                                )
+                            // In-memory filtering
+                            val filteredDocuments = documents.filter { document ->
+                                val areaOfInterest1 = document.getString("areaOfInterest") ?: ""
+                                areaOfInterest1.contains(areaOfInterest.capitalizeWords().trim(), ignoreCase = true)
                             }
-                        }
 
-//                    Toast.makeText(context, "DocumentSnapshot read successfully!", Toast.LENGTH_LONG).show()
-                    } else {
-                        Toast.makeText(this, "No such Users", Toast.LENGTH_LONG)
-                            .show()
+                            withContext(Dispatchers.Main) {
+                                for (document in filteredDocuments) {
+                                    Log.d("TAG", "${document.id} => ${document.data}")
+                                    usersList.add(
+                                        UsersModels(
+                                            document.id,
+                                            document.get("fullName").toString(),
+                                            document.get("mobileNumber").toString(),
+                                            document.get("email").toString(),
+                                            document.get("areaOfInterest").toString(),
+                                            document.get("profilePicture").toString(),
+                                            document.get("isOnline"),
+                                            document.get("fcmToken").toString()
+                                        )
+                                    )
+                                }
+
+                            }
+                        } else {
+                            withContext(Dispatchers.Main){
+                                Toast.makeText(this@HomeActivity, "No such Users", Toast.LENGTH_LONG).show()
+                            }
+
+                        }
+                    } catch (ex: Exception) {
+                        ex.message?.let { Log.e("TAG", it) }
                     }
-                } catch (ex: Exception) {
-                    ex.message?.let { Log.e("TAG", it) }
                 }
-            }.addOnFailureListener { e ->
+            }
+            .addOnFailureListener { e ->
                 Log.e("TAG", "Error writing document", e)
             }
-
 
     }
 }
@@ -182,7 +193,7 @@ fun NavHostContainer(
         builder = {
 
             composable("home") {
-                HomeScreen(userDocumentId)
+                HomeScreen(userDocumentId,userData.fullName)
             }
             composable("online") {
                 OnlineUsers(userList,userDocumentId)

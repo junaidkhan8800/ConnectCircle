@@ -10,9 +10,10 @@ data class UsersModels(
     @get:PropertyName("email") var email: String = "",
     @get:PropertyName("areaOfInterest") var areaOfInterest: String = "",
     @get:PropertyName("profilePicture") var profilePicture: String = "",
-    @get:PropertyName("isOnline") var isOnline: Any?
+    @get:PropertyName("isOnline") var isOnline: Any?,
+    @get:PropertyName("fcmToken") var fcmToken: String = ""
 ){
 
     // Empty constructor required for Firestore deserialization
-    constructor() : this("", "", "", "", "", "", true)
+    constructor() : this("", "", "", "", "", "", true, "")
 }
