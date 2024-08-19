@@ -178,12 +178,27 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String, fcmToken: Strin
                 actions = {
                     IconButton(onClick = {
 
-                        multiplePermissionsState.launchMultiplePermissionRequest()
-                        if (multiplePermissionsState.allPermissionsGranted) {
-
-
-//                            .setAudioOnly(false)
-                        }
+//                        multiplePermissionsState.launchMultiplePermissionRequest()
+//                        if (multiplePermissionsState.allPermissionsGranted) {
+//
+//                            val options = JitsiMeetConferenceOptions.Builder()
+//                                .setRoom("${Firebase.auth.currentUser?.uid}/$recipientId")
+//                                .setFeatureFlag("invite.enabled", false)
+//                                .setFeatureFlag("lobby-mode.enabled", false)
+//                                .setFeatureFlag("prejoinpage.enabled", false)
+////                                .setFeatureFlag("tile-view.enabled",true)
+//                                .setAudioOnly(true)
+//                                .setFeatureFlag("welcomepage.enabled", false)
+//                                .build()
+//
+//                            JitsiMeetActivity.launch(context, options)
+//
+//                            CoroutineScope(Dispatchers.IO).launch {
+//                                sendCallNotification(recipientId, fcmToken, context)
+//                            }
+//
+////
+//                        }
 
                     }) {
                         Icon(
@@ -284,13 +299,13 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String, fcmToken: Strin
                     ),
                     onClick = {
 
-                        CoroutineScope(Dispatchers.Default).launch {
+//                        CoroutineScope(Dispatchers.Default).launch {
                             chatViewModel.addMessage()
-                        }
+//                        }
 
-                        CoroutineScope(Dispatchers.IO).launch {
-                            sendChatNotification(fcmToken, message, userId, context)
-                        }
+//                        CoroutineScope(Dispatchers.IO).launch {
+//                            sendChatNotification(fcmToken, message, userId, context)
+//                        }
                     }
                 ) {
                     Icon(

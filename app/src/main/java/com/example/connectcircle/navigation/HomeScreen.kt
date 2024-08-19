@@ -64,7 +64,7 @@ import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(userDocumentId: String, fullName: String) {
+fun HomeScreen(userDocumentId: String, userData: UsersModels) {
 
     var search by remember { mutableStateOf("") }
     var listVisible by remember { mutableStateOf(false) }
@@ -210,7 +210,7 @@ fun HomeScreen(userDocumentId: String, fullName: String) {
                                 usersList[users].areaOfInterest,
                                 usersList[users].isOnline,
                                 usersList[users].fcmToken,
-                                fullName
+                                userData
                             )
                         }
                     }
@@ -234,7 +234,7 @@ fun ListUI(
     areaOfInterest: String,
     online: Any?,
     fcmToken: String,
-    senderName: String
+    userData: UsersModels
 ) {
 
     Card(
@@ -243,7 +243,7 @@ fun ListUI(
             .clickable {
 
 
-//                Log.e("ListUI", "ListUI: $fcmToken")
+                Log.e("ListUI", "ListUI: ${userData.fullName}")
 
                 val intent = Intent(context, ChatActivity::class.java)
 
@@ -251,7 +251,7 @@ fun ListUI(
                 intent.putExtra("fullName", fullName)
                 intent.putExtra("profilePicture", profilePicture)
                 intent.putExtra("fcmToken", fcmToken)
-                intent.putExtra("senderName", senderName)
+                intent.putExtra("senderName", userData.fullName)
 
                 context.startActivity(intent)
 
@@ -306,5 +306,5 @@ fun ListUI(
 @Preview
 @Composable
 fun HomePrev() {
-    HomeScreen("userDocumentId", "userData.fullName")
+//    HomeScreen("userDocumentId", "userData")
 }

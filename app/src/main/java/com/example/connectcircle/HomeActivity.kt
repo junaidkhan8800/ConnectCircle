@@ -193,7 +193,7 @@ fun NavHostContainer(
         builder = {
 
             composable("home") {
-                HomeScreen(userDocumentId,userData.fullName)
+                HomeScreen(userDocumentId,userData)
             }
             composable("online") {
                 OnlineUsers(userList,userDocumentId)

@@ -83,9 +83,11 @@ class MyApp : Application() {
         // Create a partial UsersModels object with only the online status
         val userStatusUpdate = mapOf("isOnline" to true)
 
+        val db = FirebaseFirestore.getInstance()
+        val userRef = db.collection("users").document(userId!!)
+
         // Firestore: Update the existing document without overwriting other fields
-        val query = FirebaseFirestore.getInstance().collection("users").document(userId ?: "")
-        query.set(userStatusUpdate, SetOptions.merge())
+        userRef.set(userStatusUpdate, SetOptions.merge())
             .addOnSuccessListener { Log.e("ApplicationClass", "User is online") }
             .addOnFailureListener { e -> Log.e("ApplicationClass", "Error updating user status", e) }
 
@@ -102,9 +104,11 @@ class MyApp : Application() {
         // Create a partial UsersModels object with only the offline status
         val userStatusUpdate = mapOf("isOnline" to false)
 
+        val db = FirebaseFirestore.getInstance()
+        val userRef = db.collection("users").document(userId!!)
+
         // Firestore: Update the existing document without overwriting other fields
-        val query = FirebaseFirestore.getInstance().collection("users").document(userId ?: "")
-        query.set(userStatusUpdate, SetOptions.merge())
+        userRef.set(userStatusUpdate, SetOptions.merge())
             .addOnSuccessListener { Log.e("ApplicationClass", "User is offline") }
             .addOnFailureListener { e -> Log.e("ApplicationClass", "Error updating user status", e) }
 

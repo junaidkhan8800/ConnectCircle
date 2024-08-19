@@ -150,7 +150,7 @@ fun ListUi(profilePicture: String, fullName: String, areaOfInterest: String, onl
 
             Text(
                 text = if (online as Boolean) "Online" else "Offline",
-                color = if (online) Color.Green else Color.Red
+                color = if (online as Boolean) Color.Green else Color.Red
             )
 
         }
