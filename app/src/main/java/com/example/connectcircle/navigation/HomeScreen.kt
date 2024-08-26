@@ -138,6 +138,8 @@ fun HomeScreen(userDocumentId: String, userData: UsersModels) {
                                                     areaOfInterest.contains(search.capitalizeWords().trim(), ignoreCase = true)
                                                 }
 
+
+
                                                 withContext(Dispatchers.Main) {
                                                     for (document in filteredDocuments) {
                                                         Log.d("TAG", "${document.id} => ${document.data}")
@@ -159,6 +161,10 @@ fun HomeScreen(userDocumentId: String, userData: UsersModels) {
 
                                                         }
 
+                                                    }
+
+                                                    if (usersList.isEmpty()){
+                                                        Toast.makeText(context, "No such Users", Toast.LENGTH_LONG).show()
                                                     }
 
                                                     listVisible = usersList.isNotEmpty()
