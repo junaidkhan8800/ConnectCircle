@@ -431,7 +431,7 @@ fun RegistrationUI() {
 
                                                         storageReference.downloadUrl.addOnSuccessListener { uri ->
 
-                                                            userHashMap["profileImage"] =
+                                                            userHashMap["profilePicture"] =
                                                                 uri.toString()
 
                                                             documentReference.set(userHashMap)

@@ -24,6 +24,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,20 +39,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.connectcircle.ChatActivity
+import com.example.connectcircle.PastChatsViewModel
 import com.example.connectcircle.R
 import com.example.connectcircle.models.UsersModels
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OnlineUsers(
-    usersList: SnapshotStateList<UsersModels>,
-    userDocumentId: String,
-    userData: UsersModels
+fun PastChatsScreen(
+    userDocumentId: String,  // Current user's document ID
+    userData: UsersModels,   // Current user data
+    pastChatsViewModel: PastChatsViewModel = viewModel()  // Use the separate ViewModel
 ) {
-
     val context = LocalContext.current
+
+    // Observe past chats from ViewModel
+    val pastChats by pastChatsViewModel.pastChats.observeAsState(initial = emptyList())
+
+    // Fetch past chats only once when the screen loads
+    LaunchedEffect(Unit) {
+        pastChatsViewModel.fetchPastChats()
+    }
 
     Scaffold(
         topBar = {
@@ -70,87 +82,78 @@ fun OnlineUsers(
             )
         },
         containerColor = MaterialTheme.colorScheme.primary,
-        modifier = Modifier
-            .fillMaxSize()
-
-    ) { it ->
-
+        modifier = Modifier.fillMaxSize(),
+    ) { paddingValues ->
         Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(it),
+                .padding(paddingValues),
             shape = RoundedCornerShape(topStart = 50.dp)
         ) {
 
-            if (usersList.size != 0){
-
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                ) {
-
-                    items(usersList.size) { users ->
+            if (pastChats.isNotEmpty()) {
+                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    items(pastChats.size) { index ->
+                        val user = pastChats[index]
                         ListUi(
-                            context,
-                            usersList[users].id,
-                            usersList[users].profilePicture,
-                            usersList[users].fullName,
-                            usersList[users].areaOfInterest,
-                            usersList[users].isOnline,
-                            usersList[users].fcmToken,
-                            userData
+                            context = context,
+                            userId = user.recipientId,
+                            profilePicture = user.profilePicture,
+                            fullName = user.fullName,
+                            areaOfInterest = user.areaOfInterest,
+                            online = user.isOnline,
+                            fcmToken = user.fcmToken,
+                            userData = userData,
+                            messageFrom = user.messageFrom,
+                            lastMessage = user.lastMessage,
+                            lastMessageTimestamp = user.lastMessageTimestamp
                         )
                     }
                 }
-
-            }else{
-
+            } else {
                 Text(
-                    text = "No Online Users",
+                    text = "No Chats",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     modifier = Modifier.fillMaxSize(),
                     textAlign = TextAlign.Center
                 )
-
             }
-
-
-
         }
     }
-
 }
+
 
 
 @Composable
 fun ListUi(
-    context : Context,
+    context: Context,
     userId: String,
     profilePicture: String,
     fullName: String,
     areaOfInterest: String,
     online: Any?,
     fcmToken: String,
-    userData: UsersModels
+    userData: UsersModels,
+    messageFrom: String,
+    lastMessage: String,  // New: Last message to display
+    lastMessageTimestamp: Long  // New: Timestamp of the last message
 ) {
 
     Card(
         Modifier
             .padding(16.dp)
             .clickable {
-
-                Log.e("ListUI", "ListUI: ${userData.fullName}")
-
+                // Open ChatActivity when the user is clicked
                 val intent = Intent(context, ChatActivity::class.java)
 
                 intent.putExtra("recipientId", userId)
-                intent.putExtra("fullName", fullName)
+                intent.putExtra("fullName", messageFrom)
                 intent.putExtra("profilePicture", profilePicture)
                 intent.putExtra("fcmToken", fcmToken)
                 intent.putExtra("senderName", userData.fullName)
 
                 context.startActivity(intent)
-
             },
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
@@ -178,20 +181,27 @@ fun ListUi(
             ) {
 
                 Text(
-                    text = fullName,
+                    text = messageFrom,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold
                 )
 
-                Text(text = areaOfInterest)
+                Text(text = lastMessage)  // Display the last message
+
+                // Convert timestamp to readable format (optional)
+                Text(
+                    text = "Last message: ${android.text.format.DateFormat.format("dd-MM-yyyy HH:mm", lastMessageTimestamp)}",
+                    fontSize = 12.sp,
+                    color = Color.Gray
+                )
 
             }
 
-
-            Text(
-                text = if (online as Boolean) "Online" else "Offline",
-                color = if (online as Boolean) Color.Green else Color.Red
-            )
+            // Online status
+//            Text(
+//                text = if (online as Boolean) "Online" else "Offline",
+//                color = if (online as Boolean) Color.Green else Color.Red
+//            )
 
         }
 

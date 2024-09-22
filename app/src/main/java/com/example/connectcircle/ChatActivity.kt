@@ -101,6 +101,9 @@ class ChatActivity : ComponentActivity() {
                 val fcmToken = intent.getStringExtra("fcmToken")
                     ?: throw IllegalArgumentException("FCMToken is missing")
 
+                val senderName = intent.getStringExtra("senderName")
+                    ?: throw IllegalArgumentException("Sender Name is missing")
+
 
                 // Initialize ChatViewModel
                 val chatViewModel: ChatViewModel = viewModel()
@@ -109,6 +112,7 @@ class ChatActivity : ComponentActivity() {
                 chatViewModel.setRecipientId(recipientId)
                 chatViewModel.setFullName(fullName)
                 chatViewModel.setProfilePicture(profilePicture)
+                chatViewModel.setSenderName(senderName)
 
                 ChatAppUI(chatViewModel, recipientId, fcmToken,userId)
 
@@ -127,6 +131,7 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String, fcmToken: Strin
 
     val fullName: String by chatViewModel.fullName.observeAsState("")
     val profilePicture: String by chatViewModel.profilePicture.observeAsState("")
+    val senderName: String by chatViewModel.senderName.observeAsState("")
 
     val context = LocalContext.current
 

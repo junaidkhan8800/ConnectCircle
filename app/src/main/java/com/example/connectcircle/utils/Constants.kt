@@ -5,6 +5,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChatBubble
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
@@ -45,7 +46,7 @@ class Constants {
         val BottomNavItems = listOf(
 
             BottomNavItem(label = "Home", icon = Icons.Filled.Home, route = "home"),
-            BottomNavItem(label = "Online Users", icon = Icons.Filled.Groups, route = "online"),
+            BottomNavItem(label = "Chats", icon = Icons.Filled.ChatBubble, route = "online"),
             BottomNavItem(label = "Profile", icon = Icons.Filled.Person, route = "profile")
 
         )

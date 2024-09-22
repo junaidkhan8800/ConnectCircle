@@ -30,6 +30,9 @@ class ChatViewModel : ViewModel() {
     private val _fullName = MutableLiveData<String>()
     val fullName: LiveData<String> = _fullName
 
+    private val _senderName = MutableLiveData<String>()
+    val senderName: LiveData<String> = _senderName
+
     private val _profilePicture = MutableLiveData<String>()
     val profilePicture: LiveData<String> = _profilePicture
 
@@ -52,6 +55,10 @@ class ChatViewModel : ViewModel() {
         _profilePicture.value = profilePicture
     }
 
+    fun setSenderName(senderName: String) {
+        _senderName.value = senderName
+    }
+
     /**
      * Update the message value as the user types
      */
@@ -69,16 +76,27 @@ class ChatViewModel : ViewModel() {
 
         if (message.isNotEmpty()) {
             val chatId = getChatId(currentUserId, recipientId)
-            Firebase.firestore.collection(Constants.CHATS).document(chatId)
-                .collection(Constants.MESSAGES).document().set(
-                    hashMapOf(
-                        Constants.MESSAGE to message,
-                        Constants.SENT_BY to currentUserId,
-                        Constants.SENT_TO to recipientId,
-                        Constants.SENT_ON to System.currentTimeMillis()
-                    )
-                ).addOnSuccessListener {
+
+
+            val messageData = hashMapOf(
+                Constants.MESSAGE to message,
+                Constants.SENT_BY to currentUserId,
+                Constants.SENT_TO to recipientId,
+                Constants.SENT_ON to System.currentTimeMillis()
+            )
+
+            Firebase.firestore.collection("users")
+                .document(currentUserId)
+                .collection("chats")
+                .document(chatId)
+                .collection("messages")
+                .document() // Create a new message document
+                .set(messageData)
+                .addOnSuccessListener {
                     _message.value = ""
+
+                    // Update the last message and timestamp in both user's chat subcollections
+                    updateLastMessage(chatId, message, recipientId)
 
                     CoroutineScope(Dispatchers.IO).launch {
                         sendChatNotification(fcmToken, message, userId, context)
@@ -88,10 +106,66 @@ class ChatViewModel : ViewModel() {
                     // Handle the error if needed
                     Log.e("Chat", "Failed to send message: ", exception)
                 }
+
+
+            // Send the same message to the recipient's messages collection
+            Firebase.firestore.collection("users")
+                .document(recipientId)
+                .collection("chats")
+                .document(chatId)
+                .collection("messages")
+                .document() // Create a new message document
+                .set(messageData)
+                .addOnFailureListener { exception ->
+                    // Handle the error if needed
+                    Log.e("Chat", "Failed to send message to recipient: ", exception)
+                }
+
         }
     }
 
-    private fun sendChatNotification(fcmToken: String, message: String, userId: String, context: Context) {
+    private fun updateLastMessage(
+        chatId: String,
+        message: String,
+        recipientId: String,
+    ) {
+
+        // Update last message for the current user
+        Firebase.firestore.collection("users")
+            .document(currentUserId)
+            .collection("chats")
+            .document(chatId)
+            .set(
+                hashMapOf(
+                    "messageFrom" to _fullName.value,
+                    "lastMessage" to message,
+                    "lastMessageTimestamp" to System.currentTimeMillis(),
+                    "recipientId" to recipientId
+                )
+            )
+
+        // Update last message for the recipient user
+        Firebase.firestore.collection("users")
+            .document(recipientId)
+            .collection("chats")
+            .document(chatId)
+            .set(
+                hashMapOf(
+                    "messageFrom" to _senderName.value,
+                    "lastMessage" to message,
+                    "lastMessageTimestamp" to System.currentTimeMillis(),
+                    "recipientId" to recipientId
+                )
+            )
+
+    }
+
+    private fun sendChatNotification(
+        fcmToken: String,
+        message: String,
+        userId: String,
+        context: Context
+    ) {
 
         if (userId.isEmpty()) {
             Log.w("ChatNotification", "Full Name is empty")
@@ -122,7 +196,10 @@ class ChatViewModel : ViewModel() {
         val request = Request.Builder()
             .url("https://fcm.googleapis.com/v1/projects/connect-circle-23dca/messages:send")  // Update with your FCM URL
             .post(requestBody)
-            .addHeader("Authorization", "Bearer " + getServiceAccountAccessToken(context))  // Replace with your server key
+            .addHeader(
+                "Authorization",
+                "Bearer " + getServiceAccountAccessToken(context)
+            )  // Replace with your server key
             .addHeader("Content-Type", "application/json")
             .build()
 
@@ -163,8 +240,12 @@ class ChatViewModel : ViewModel() {
         val recipientId = _recipientId.value ?: return
         val chatId = getChatId(currentUserId, recipientId)
 
-        Firebase.firestore.collection(Constants.CHATS).document(chatId)
-            .collection(Constants.MESSAGES)
+        // Fetch messages from the current user's chats subcollection
+        Firebase.firestore.collection("users")
+            .document(currentUserId)
+            .collection("chats")
+            .document(chatId)
+            .collection("messages")
             .orderBy(Constants.SENT_ON)
             .addSnapshotListener { value, e ->
                 if (e != null) {
@@ -185,6 +266,7 @@ class ChatViewModel : ViewModel() {
                 updateMessages(list)
             }
     }
+
 
     /**
      * Update the list after getting the details from Firestore

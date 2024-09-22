@@ -26,7 +26,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
 import com.example.connectcircle.models.UsersModels
 import com.example.connectcircle.navigation.HomeScreen
-import com.example.connectcircle.navigation.OnlineUsers
+import com.example.connectcircle.navigation.PastChatsScreen
 import com.example.connectcircle.navigation.ProfileScreen
 import com.example.connectcircle.ui.theme.ConnectCircleTheme
 import com.example.connectcircle.utils.Constants
@@ -111,7 +111,7 @@ class HomeActivity : ComponentActivity() {
 
                         userDocumentId = mAuth.currentUser?.uid!!
 
-                        getOnlineUsers(user.areaOfInterest)
+//                        getOnlineUsers(user.areaOfInterest)
 
                     } else {
                         Log.e("TAG", "ProfileScreen: User Not Found")
@@ -125,61 +125,61 @@ class HomeActivity : ComponentActivity() {
             }
     }
 
-    private fun getOnlineUsers(areaOfInterest: String) {
-
-        mFirestore.collection("users")
-            .get()
-            .addOnSuccessListener { documents ->
-                CoroutineScope(Dispatchers.Default).launch {
-                    try {
-                        if (documents != null) {
-                            usersList.clear()
-
-                            // In-memory filtering
-                            val filteredDocuments = documents.filter { document ->
-                                val areaOfInterest1 = document.getString("areaOfInterest") ?: ""
-                                areaOfInterest1.contains(areaOfInterest.capitalizeWords().trim(), ignoreCase = true)
-                            }
-
-                            withContext(Dispatchers.Main) {
-                                for (document in filteredDocuments) {
-                                    Log.d("TAG", "${document.id} => ${document.data}")
-
-                                    if (document.id != mAuth.currentUser?.uid && document.get("isOnline") == true){
-
-                                        usersList.add(
-                                            UsersModels(
-                                                document.id,
-                                                document.get("fullName").toString(),
-                                                document.get("mobileNumber").toString(),
-                                                document.get("email").toString(),
-                                                document.get("areaOfInterest").toString(),
-                                                document.get("profilePicture").toString(),
-                                                document.get("isOnline"),
-                                                document.get("fcmToken").toString()
-                                            )
-                                        )
-
-                                    }
-                                }
-
-                            }
-                        } else {
-                            withContext(Dispatchers.Main){
-                                Toast.makeText(this@HomeActivity, "No such Users", Toast.LENGTH_LONG).show()
-                            }
-
-                        }
-                    } catch (ex: Exception) {
-                        ex.message?.let { Log.e("TAG", it) }
-                    }
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e("TAG", "Error writing document", e)
-            }
-
-    }
+//    private fun getOnlineUsers(areaOfInterest: String) {
+//
+//        mFirestore.collection("users")
+//            .get()
+//            .addOnSuccessListener { documents ->
+//                CoroutineScope(Dispatchers.Default).launch {
+//                    try {
+//                        if (documents != null) {
+//                            usersList.clear()
+//
+//                            // In-memory filtering
+//                            val filteredDocuments = documents.filter { document ->
+//                                val areaOfInterest1 = document.getString("areaOfInterest") ?: ""
+//                                areaOfInterest1.contains(areaOfInterest.capitalizeWords().trim(), ignoreCase = true)
+//                            }
+//
+//                            withContext(Dispatchers.Main) {
+//                                for (document in filteredDocuments) {
+//                                    Log.d("TAG", "${document.id} => ${document.data}")
+//
+//                                    if (document.id != mAuth.currentUser?.uid && document.get("isOnline") == true){
+//
+//                                        usersList.add(
+//                                            UsersModels(
+//                                                document.id,
+//                                                document.get("fullName").toString(),
+//                                                document.get("mobileNumber").toString(),
+//                                                document.get("email").toString(),
+//                                                document.get("areaOfInterest").toString(),
+//                                                document.get("profilePicture").toString(),
+//                                                document.get("isOnline"),
+//                                                document.get("fcmToken").toString()
+//                                            )
+//                                        )
+//
+//                                    }
+//                                }
+//
+//                            }
+//                        } else {
+//                            withContext(Dispatchers.Main){
+//                                Toast.makeText(this@HomeActivity, "No such Users", Toast.LENGTH_LONG).show()
+//                            }
+//
+//                        }
+//                    } catch (ex: Exception) {
+//                        ex.message?.let { Log.e("TAG", it) }
+//                    }
+//                }
+//            }
+//            .addOnFailureListener { e ->
+//                Log.e("TAG", "Error writing document", e)
+//            }
+//
+//    }
 }
 
 @Composable
@@ -201,7 +201,7 @@ fun NavHostContainer(
                 HomeScreen(userDocumentId,userData)
             }
             composable("online") {
-                OnlineUsers(userList,userDocumentId, userData)
+                PastChatsScreen(userDocumentId, userData)
             }
             composable("profile") {
                 ProfileScreen(userData)
