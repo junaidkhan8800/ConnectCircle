@@ -146,7 +146,7 @@ fun LoginActivityUI(context: Context) {
                 ) {
 
                     Image(
-                        painter = painterResource(R.drawable.ic_launcher_foreground),
+                        painter = painterResource(R.drawable.logo),
                         contentDescription = "null",
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
