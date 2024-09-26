@@ -23,9 +23,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Report
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.VideoCall
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,11 +40,15 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -133,7 +140,12 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String, fcmToken: Strin
     val profilePicture: String by chatViewModel.profilePicture.observeAsState("")
     val senderName: String by chatViewModel.senderName.observeAsState("")
 
+    val isBlocked: Boolean by chatViewModel.isBlocked.observeAsState(false)
+
     val context = LocalContext.current
+
+    var showDialog by remember { mutableStateOf(false) }
+    var dialogType by remember { mutableStateOf("") }  // "block" or "report"
 
     // Define permissions to request
     val cameraPermission = android.Manifest.permission.CAMERA
@@ -159,6 +171,51 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String, fcmToken: Strin
         e.printStackTrace()
     }
 
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text(text = if (dialogType == "block") "Block User" else "Report User") },
+            text = {
+                Text(
+                    text = if (dialogType == "block") {
+                        "Are you sure you want to block this user? You will no longer be able to communicate with them."
+                    }else if (dialogType == "unblock"){
+                        "Are you sure you want to unblock this user? You will be able to communicate with them."
+                    } else {
+                        "Are you sure you want to report this user for inappropriate behavior?"
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        if (dialogType == "block") {
+                            chatViewModel.toggleBlockUser(recipientId)
+                            Toast.makeText(context, "User Blocked", Toast.LENGTH_SHORT).show()
+                        }else if (dialogType == "unblock"){
+                            chatViewModel.toggleBlockUser(recipientId)
+                            Toast.makeText(context, "User Unblocked", Toast.LENGTH_SHORT).show()
+                        } else {
+                            chatViewModel.reportUser(recipientId)
+                            Toast.makeText(context, "User Reported", Toast.LENGTH_SHORT).show()
+                        }
+                        showDialog = false
+                    }
+                ) {
+                    Text("Confirm")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDialog = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+    
 
     Scaffold(
         topBar = {
@@ -242,6 +299,36 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String, fcmToken: Strin
                             contentDescription = "Video Call"
                         )
                     }
+
+                    // Block Button
+                    IconButton(onClick = {
+
+                        dialogType = if (isBlocked){
+                            "unblock"
+                        }else{
+                            "block"
+                        }
+
+                        showDialog = true
+                    }) {
+                        Icon(
+                            tint = Color.Red,
+                            imageVector = Icons.Filled.Block,
+                            contentDescription = "Block User"
+                        )
+                    }
+
+                    // Report Button
+                    IconButton(onClick = {
+                        dialogType = "report"
+                        showDialog = true
+                    }) {
+                        Icon(
+                            tint = Color.Yellow,
+                            imageVector = Icons.Filled.Report,
+                            contentDescription = "Report User"
+                        )
+                    }
                 }
             )
         },
@@ -279,47 +366,61 @@ fun ChatAppUI(chatViewModel: ChatViewModel, recipientId: String, fcmToken: Strin
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedTextField(
-                    value = message,
-                    onValueChange = {
-                        chatViewModel.updateMessage(it)
-                    },
-                    label = {
-                        Text("Type Your Message")
-                    },
-                    shape = RoundedCornerShape(25.dp),
-                    maxLines = 1,
-                    modifier = Modifier
-                        .weight(1f),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Text
-                    ),
-                    singleLine = true,
-                )
-                IconButton(
-                    modifier = Modifier
-                        .padding(start = 16.dp, top = 8.dp)
-                        .size(58.dp),
-                    colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ),
-                    onClick = {
 
-                        if (TextUtils.isEmpty(message)){
-                            Toast.makeText(context, "Cannot send empty message", Toast.LENGTH_SHORT).show()
-                        }else{
 
-                            chatViewModel.addMessage(context, fcmToken, userId)
-                        }
-
-                    }
-                ) {
-                    Icon(
-                        tint = Color.Black,
-                        imageVector = Icons.Default.Send,
-                        contentDescription = "Send Button"
+                if (isBlocked) {
+                    Text(
+                        text = "You are blocked by this user.",
+                        color = Color.Red,
+                        modifier = Modifier.padding(16.dp),
+                        textAlign = TextAlign.Center
                     )
+                } else {
+
+                    OutlinedTextField(
+                        value = message,
+                        onValueChange = {
+                            chatViewModel.updateMessage(it)
+                        },
+                        label = {
+                            Text("Type Your Message")
+                        },
+                        shape = RoundedCornerShape(25.dp),
+                        maxLines = 1,
+                        modifier = Modifier
+                            .weight(1f),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Text
+                        ),
+                        singleLine = true,
+                    )
+                    IconButton(
+                        modifier = Modifier
+                            .padding(start = 16.dp, top = 8.dp)
+                            .size(58.dp),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        ),
+                        onClick = {
+
+                            if (TextUtils.isEmpty(message)){
+                                Toast.makeText(context, "Cannot send empty message", Toast.LENGTH_SHORT).show()
+                            }else{
+
+                                chatViewModel.addMessage(context, fcmToken, userId)
+                            }
+
+                        }
+                    ) {
+                        Icon(
+                            tint = Color.Black,
+                            imageVector = Icons.Default.Send,
+                            contentDescription = "Send Button"
+                        )
+                    }
+
                 }
+
             }
         }
     }

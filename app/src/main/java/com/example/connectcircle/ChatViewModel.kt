@@ -2,6 +2,7 @@ package com.example.connectcircle
 
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -42,9 +43,13 @@ class ChatViewModel : ViewModel() {
     private val _messages = MutableLiveData<MutableList<Map<String, Any>>>(mutableListOf())
     val messages: LiveData<MutableList<Map<String, Any>>> = _messages
 
+    private val _isBlocked = MutableLiveData<Boolean>(false)
+    val isBlocked: LiveData<Boolean> = _isBlocked
+
     fun setRecipientId(recipientId: String) {
         _recipientId.value = recipientId
         getMessages()
+        checkIfBlocked()
     }
 
     fun setFullName(fullName: String) {
@@ -59,9 +64,6 @@ class ChatViewModel : ViewModel() {
         _senderName.value = senderName
     }
 
-    /**
-     * Update the message value as the user types
-     */
     fun updateMessage(message: String) {
         _message.value = message
     }
@@ -71,12 +73,15 @@ class ChatViewModel : ViewModel() {
      */
     fun addMessage(context: Context, fcmToken: String, userId: String) {
         val message: String = _message.value ?: throw IllegalArgumentException("Message is empty")
-        val recipientId =
-            _recipientId.value ?: throw IllegalStateException("Recipient ID is not set")
+        val recipientId = _recipientId.value ?: throw IllegalStateException("Recipient ID is not set")
+
+        if (_isBlocked.value == true) {
+            Toast.makeText(context, "You are blocked by this user. Cannot send message.", Toast.LENGTH_SHORT).show()
+            return
+        }
 
         if (message.isNotEmpty()) {
             val chatId = getChatId(currentUserId, recipientId)
-
 
             val messageData = hashMapOf(
                 Constants.MESSAGE to message,
@@ -95,7 +100,6 @@ class ChatViewModel : ViewModel() {
                 .addOnSuccessListener {
                     _message.value = ""
 
-                    // Update the last message and timestamp in both user's chat subcollections
                     updateLastMessage(chatId, message, recipientId)
 
                     CoroutineScope(Dispatchers.IO).launch {
@@ -103,10 +107,8 @@ class ChatViewModel : ViewModel() {
                     }
 
                 }.addOnFailureListener { exception ->
-                    // Handle the error if needed
                     Log.e("Chat", "Failed to send message: ", exception)
                 }
-
 
             // Send the same message to the recipient's messages collection
             Firebase.firestore.collection("users")
@@ -117,10 +119,8 @@ class ChatViewModel : ViewModel() {
                 .document() // Create a new message document
                 .set(messageData)
                 .addOnFailureListener { exception ->
-                    // Handle the error if needed
                     Log.e("Chat", "Failed to send message to recipient: ", exception)
                 }
-
         }
     }
 
@@ -129,8 +129,6 @@ class ChatViewModel : ViewModel() {
         message: String,
         recipientId: String,
     ) {
-
-        // Update last message for the current user
         Firebase.firestore.collection("users")
             .document(currentUserId)
             .collection("chats")
@@ -144,7 +142,6 @@ class ChatViewModel : ViewModel() {
                 )
             )
 
-        // Update last message for the recipient user
         Firebase.firestore.collection("users")
             .document(recipientId)
             .collection("chats")
@@ -157,7 +154,6 @@ class ChatViewModel : ViewModel() {
                     "recipientId" to recipientId
                 )
             )
-
     }
 
     private fun sendChatNotification(
@@ -166,13 +162,6 @@ class ChatViewModel : ViewModel() {
         userId: String,
         context: Context
     ) {
-
-        if (userId.isEmpty()) {
-            Log.w("ChatNotification", "Full Name is empty")
-            return
-        }
-
-        // Construct the notification payload
         val payload = JSONObject().apply {
             put("message", JSONObject().apply {
                 put("token", fcmToken)
@@ -187,19 +176,18 @@ class ChatViewModel : ViewModel() {
             })
         }
 
-        // Send the notification
         val client = OkHttpClient()
         val requestBody = RequestBody.create(
             "application/json; charset=utf-8".toMediaTypeOrNull(),
             payload.toString()
         )
         val request = Request.Builder()
-            .url("https://fcm.googleapis.com/v1/projects/connect-circle-23dca/messages:send")  // Update with your FCM URL
+            .url("https://fcm.googleapis.com/v1/projects/connect-circle-23dca/messages:send")
             .post(requestBody)
             .addHeader(
                 "Authorization",
                 "Bearer " + getServiceAccountAccessToken(context)
-            )  // Replace with your server key
+            )
             .addHeader("Content-Type", "application/json")
             .build()
 
@@ -216,20 +204,42 @@ class ChatViewModel : ViewModel() {
                 }
             }
         })
-
     }
 
     @Throws(IOException::class)
     fun getServiceAccountAccessToken(context: Context): String {
-
         val serviceAccount = context.resources.openRawResource(R.raw.service_account_key)
-
         val credentials = GoogleCredentials.fromStream(serviceAccount)
             .createScoped("https://www.googleapis.com/auth/firebase.messaging")
 
         credentials.refresh()
         return credentials.accessToken.tokenValue
+    }
 
+    /**
+     * Check if the user is blocked by the recipient
+     */
+    private fun checkIfBlocked() {
+        val recipientId = _recipientId.value ?: return
+
+        Firebase.firestore.collection("users")
+            .document(recipientId)
+            .get()
+            .addOnSuccessListener { documentSnapshot ->
+                val blockedByMap = documentSnapshot.get("blockedBy") as? Map<String, Boolean>
+
+                if (blockedByMap == null) {
+                    _isBlocked.value = false
+                    return@addOnSuccessListener
+                } else{
+
+                    _isBlocked.value = blockedByMap?.get(currentUserId) == true
+                }
+
+            }
+            .addOnFailureListener { exception ->
+                Log.e("ChatViewModel", "Failed to check block status: ", exception)
+            }
     }
 
 
@@ -240,7 +250,6 @@ class ChatViewModel : ViewModel() {
         val recipientId = _recipientId.value ?: return
         val chatId = getChatId(currentUserId, recipientId)
 
-        // Fetch messages from the current user's chats subcollection
         Firebase.firestore.collection("users")
             .document(currentUserId)
             .collection("chats")
@@ -267,17 +276,10 @@ class ChatViewModel : ViewModel() {
             }
     }
 
-
-    /**
-     * Update the list after getting the details from Firestore
-     */
     private fun updateMessages(list: MutableList<Map<String, Any>>) {
         _messages.value = list.asReversed()
     }
 
-    /**
-     * Generate a unique chat ID based on the user IDs
-     */
     private fun getChatId(user1: String, user2: String): String {
         return if (user1.isNotEmpty() && user2.isNotEmpty()) {
             if (user1 < user2) {
@@ -288,6 +290,73 @@ class ChatViewModel : ViewModel() {
         } else {
             throw IllegalArgumentException("User IDs cannot be empty")
         }
+    }
+
+
+    fun toggleBlockUser(recipientId: String) {
+        if (_isBlocked.value == true) {
+            // User is blocked, so unblock them
+            unblockUser(recipientId)
+        } else {
+            // User is not blocked, so block them
+            blockUser(recipientId)
+        }
+    }
+
+    /**
+     * Block the user
+     */
+    fun blockUser(recipientId: String) {
+        val currentUserUid = Firebase.auth.currentUser?.uid ?: return
+
+        Firebase.firestore.collection("users")
+            .document(recipientId)
+            .update(mapOf("blockedBy.$currentUserUid" to true))
+            .addOnSuccessListener {
+                // Update block status
+                _isBlocked.value = true
+                Log.d("ChatViewModel", "User blocked successfully.")
+            }
+            .addOnFailureListener { exception ->
+                Log.e("ChatViewModel", "Failed to block user: ", exception)
+            }
+    }
+
+    /**
+     * Unblock the user
+     */
+    private fun unblockUser(recipientId: String) {
+        val currentUserUid = Firebase.auth.currentUser?.uid ?: return
+
+        Firebase.firestore.collection("users")
+            .document(recipientId)
+            .update(mapOf("blockedBy.$currentUserUid" to false))
+            .addOnSuccessListener {
+                // Update block status
+                _isBlocked.value = false
+                Log.d("ChatViewModel", "User unblocked successfully.")
+            }
+            .addOnFailureListener { exception ->
+                Log.e("ChatViewModel", "Failed to unblock user: ", exception)
+            }
+    }
+
+
+    fun reportUser(recipientId: String) {
+        val currentUserUid = Firebase.auth.currentUser?.uid ?: return
+
+        // Update the recipient's document to show they are reported by the current user
+        Firebase.firestore.collection("users")
+            .document(recipientId)
+            .update(mapOf("reportedBy.$currentUserUid" to true))  // Using a map to track which users reported this user
+            .addOnSuccessListener {
+                // Successfully reported the user
+                Log.d("ChatViewModel", "User reported successfully.")
+            }
+            .addOnFailureListener { exception ->
+                // Handle failure
+                Log.e("ChatViewModel", "Failed to report user: ", exception)
+            }
     }
 
 }
