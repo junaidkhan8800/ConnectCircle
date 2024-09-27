@@ -6,11 +6,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.connectcircle"
+    namespace = "com.yusuf.connectcircle"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.connectcircle"
+        applicationId = "com.yusuf.connectcircle"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

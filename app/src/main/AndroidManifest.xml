@@ -52,23 +52,23 @@
             android:theme="@style/Theme.ConnectCircle" />
 
         <activity
-            android:name="com.example.connectcircle.HomeActivity"
+            android:name="com.yusuf.connectcircle.HomeActivity"
             android:exported="true"
             android:theme="@style/Theme.ConnectCircle" />
 
-        <activity android:name="com.example.connectcircle.UpdateProfileActivity"
+        <activity android:name="com.yusuf.connectcircle.UpdateProfileActivity"
             android:exported="true"
             android:theme="@style/Theme.ConnectCircle"/>
 
-        <activity android:name="com.example.connectcircle.ChatActivity"
+        <activity android:name="com.yusuf.connectcircle.ChatActivity"
             android:exported="true"
             android:theme="@style/Theme.ConnectCircle"/>
 
-        <activity android:name="com.example.connectcircle.CallActivity"
+        <activity android:name="com.yusuf.connectcircle.CallActivity"
             android:exported="true"
             android:theme="@style/Theme.ConnectCircle"/>
 
-        <activity android:name="com.example.connectcircle.ForgotPasswordActivity"
+        <activity android:name="com.yusuf.connectcircle.ForgotPasswordActivity"
             android:exported="true"
             android:theme="@style/Theme.ConnectCircle"/>
 
